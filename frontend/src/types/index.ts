@@ -11,6 +11,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
+  notes?: string;
 }
 
 export type PaymentMethod = 'PIX' | 'Cartão de Crédito' | 'Cartão de Débito' | 'Dinheiro';
@@ -27,9 +28,10 @@ export interface OrderDetails {
   referencePoint: string;
   coords?: { lat: number; lng: number };
   paymentMethod: PaymentMethod;
-  notes?: string;
   cardNumber?: string;
   cardExpiry?: string;
   cardCvv?: string;
   cardName?: string;
+  cashValue?: string;
+  needsChange?: boolean;
 }

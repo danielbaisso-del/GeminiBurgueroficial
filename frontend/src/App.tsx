@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ShoppingCart, X, MessageSquare, MapPin, CreditCard, Star, Trash2, Plus, Minus, Send, Navigation, Loader2, Beer, Package } from 'lucide-react';
+import { ShoppingCart, X, MessageSquare, MapPin, CreditCard, Star, Trash2, Plus, Minus, Send, Navigation, Loader2, Beer, Package, MessageCircle, AlertCircle } from 'lucide-react';
 import { MENU_ITEMS, WHATSAPP_NUMBER } from './constants';
 import { Product, CartItem, OrderDetails, PaymentMethod } from './types';
 import { getAIRecommendation } from './services/geminiService';
@@ -18,6 +18,12 @@ export default function App() {
   const [isCepLoading, setIsCepLoading] = useState(false);
   const [isGeoLoading, setIsGeoLoading] = useState(false);
   const [aiInput, setAiInput] = useState('');
+  const [itemNotesModal, setItemNotesModal] = useState<{ isOpen: boolean; itemId: string | null }>({ isOpen: false, itemId: null });
+  const [tempNotes, setTempNotes] = useState('');
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [showCashModal, setShowCashModal] = useState(false);
+  const [cashAmount, setCashAmount] = useState('');
+  const [needsChange, setNeedsChange] = useState(false);
 
   const [orderDetails, setOrderDetails] = useState<OrderDetails>({
     customerName: '',
@@ -30,11 +36,12 @@ export default function App() {
     complement: '',
     referencePoint: '',
     paymentMethod: 'PIX',
-    notes: '',
     cardNumber: '',
     cardExpiry: '',
     cardCvv: '',
-    cardName: ''
+    cardName: '',
+    cashValue: '',
+    needsChange: false
   });
 
   const cartTotal = useMemo(() => {
@@ -96,6 +103,24 @@ export default function App() {
       }
       return item;
     }).filter(item => item.quantity > 0));
+  };
+
+  const openNotesModal = (itemId: string) => {
+    const item = cart.find(i => i.id === itemId);
+    setTempNotes(item?.notes || '');
+    setItemNotesModal({ isOpen: true, itemId });
+  };
+
+  const saveItemNotes = () => {
+    if (itemNotesModal.itemId) {
+      setCart(prev => prev.map(item => 
+        item.id === itemNotesModal.itemId 
+          ? { ...item, notes: tempNotes }
+          : item
+      ));
+    }
+    setItemNotesModal({ isOpen: false, itemId: null });
+    setTempNotes('');
   };
 
   const fetchAddressByCep = async (cep: string) => {
@@ -304,12 +329,20 @@ Aguardando confirmação!`.trim();
                     <div className="flex-1">
                       <h4 className="font-semibold text-zinc-100 text-lg">{item.name}</h4>
                       <p className="text-orange-500 font-bold">R$ {(item.price * item.quantity).toFixed(2)}</p>
+                      {item.notes && <p className="text-zinc-400 text-xs mt-1 italic">Obs: {item.notes}</p>}
                       <div className="flex items-center gap-4 mt-3">
                         <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
                           <button onClick={() => updateQuantity(item.id, -1)} className="text-zinc-400 hover:text-orange-500 transition-colors"><Minus size={16} /></button>
                           <span className="w-4 text-center font-bold">{item.quantity}</span>
                           <button onClick={() => updateQuantity(item.id, 1)} className="text-zinc-400 hover:text-orange-500 transition-colors"><Plus size={16} /></button>
                         </div>
+                        <button 
+                          onClick={() => openNotesModal(item.id)} 
+                          className="text-zinc-600 hover:text-blue-500 transition-colors p-2 bg-zinc-900 rounded-lg border border-zinc-800 hover:border-blue-500"
+                          title="Adicionar observação"
+                        >
+                          <MessageCircle size={20} />
+                        </button>
                         <button onClick={() => updateQuantity(item.id, -item.quantity)} className="text-zinc-600 hover:text-red-500 transition-colors"><Trash2 size={20} /></button>
                       </div>
                     </div>
@@ -423,7 +456,7 @@ Aguardando confirmação!`.trim();
 
                   <div className="space-y-8">
                     <h4 className="text-orange-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
-                      <span className="w-8 h-[1px] bg-orange-500"></span> Pagamento & Notas
+                      <span className="w-8 h-[1px] bg-orange-500"></span> Pagamento
                     </h4>
                     <div className="grid grid-cols-1 gap-3">
                       {['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'].map((method) => (
@@ -439,13 +472,6 @@ Aguardando confirmação!`.trim();
                         </button>
                       ))}
                     </div>
-                    <div>
-                      <textarea 
-                        placeholder="Observações (Ex: Sem cebola, ponto bem passado...)"
-                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all h-32 resize-none text-sm"
-                        value={orderDetails.notes} onChange={e => setOrderDetails(prev => ({ ...prev, notes: e.target.value }))}
-                      />
-                    </div>
                   </div>
                 </div>
 
@@ -455,7 +481,16 @@ Aguardando confirmação!`.trim();
                     <p className="text-5xl font-heading text-orange-500">R$ {cartTotal.toFixed(2)}</p>
                   </div>
                   <button 
-                    onClick={() => { setShowPayment(true); setShowCheckout(false); }}
+                    onClick={() => {
+                      if (orderDetails.paymentMethod === 'PIX') {
+                        setShowPayment(true);
+                        setShowCheckout(false);
+                      } else if (orderDetails.paymentMethod.includes('Cartão')) {
+                        setShowCardModal(true);
+                      } else if (orderDetails.paymentMethod === 'Dinheiro') {
+                        setShowCashModal(true);
+                      }
+                    }}
                     disabled={!orderDetails.customerName || !orderDetails.phone || (orderDetails.isDelivery && (!orderDetails.street || !orderDetails.number))}
                     className="w-full md:w-auto px-16 py-6 bg-green-600 hover:bg-green-500 disabled:bg-zinc-800 text-white font-bold rounded-2xl transition-all shadow-2xl shadow-green-600/30 flex items-center justify-center gap-4 text-xl group active:scale-95"
                   >
@@ -564,6 +599,194 @@ Aguardando confirmação!`.trim();
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Item Notes Modal */}
+      {itemNotesModal.isOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemNotesModal({ isOpen: false, itemId: null })} />
+          <div className="relative bg-zinc-900 rounded-3xl max-w-lg w-full shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-heading text-white flex items-center gap-3">
+                  <MessageCircle className="text-orange-500" size={28} />
+                  Observações do Item
+                </h3>
+                <button onClick={() => setItemNotesModal({ isOpen: false, itemId: null })} className="p-2 text-zinc-500 hover:text-white bg-zinc-800 rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+              <p className="text-zinc-400 mb-4 text-sm">
+                Adicione observações específicas para este item (Ex: sem cebola, ponto da carne, etc.)
+              </p>
+              <textarea
+                value={tempNotes}
+                onChange={(e) => setTempNotes(e.target.value)}
+                placeholder="Digite suas observações aqui..."
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all h-32 resize-none"
+              />
+              <div className="flex gap-4 mt-6">
+                <button 
+                  onClick={() => setItemNotesModal({ isOpen: false, itemId: null })}
+                  className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-2xl transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={saveItemNotes}
+                  className="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-2xl transition-all"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Card Payment Modal */}
+      {showCardModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setShowCardModal(false)} />
+          <div className="relative bg-zinc-900 rounded-3xl max-w-lg w-full shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-heading text-white flex items-center gap-3">
+                  <CreditCard className="text-orange-500" size={28} />
+                  Pagamento com Cartão
+                </h3>
+                <button onClick={() => setShowCardModal(false)} className="p-2 text-zinc-500 hover:text-white bg-zinc-800 rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6 mb-6">
+                <div className="flex items-start gap-4">
+                  <AlertCircle className="text-blue-400 flex-shrink-0" size={24} />
+                  <div>
+                    <h4 className="text-blue-400 font-semibold mb-2">Informação Importante</h4>
+                    <p className="text-zinc-300 text-sm leading-relaxed">
+                      O pagamento será realizado na {orderDetails.isDelivery ? 'entrega' : 'retirada'} do pedido. 
+                      Nosso entregador levará a máquina de cartão para processar o pagamento de <strong className="text-white">R$ {cartTotal.toFixed(2)}</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowCardModal(false)}
+                  className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-2xl transition-all"
+                >
+                  Voltar
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowCardModal(false);
+                    setShowCheckout(false);
+                    setShowPayment(true);
+                  }}
+                  className="flex-1 py-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-2xl transition-all flex items-center justify-center gap-2"
+                >
+                  Confirmar <Send size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cash Payment Modal */}
+      {showCashModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setShowCashModal(false)} />
+          <div className="relative bg-zinc-900 rounded-3xl max-w-lg w-full shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-heading text-white flex items-center gap-3">
+                  <CreditCard className="text-orange-500" size={28} />
+                  Pagamento em Dinheiro
+                </h3>
+                <button onClick={() => setShowCashModal(false)} className="p-2 text-zinc-500 hover:text-white bg-zinc-800 rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Valor total do pedido</label>
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4">
+                    <p className="text-3xl font-heading text-orange-500">R$ {cartTotal.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 bg-zinc-800 rounded-2xl border border-zinc-700">
+                  <input
+                    type="checkbox"
+                    id="needsChange"
+                    checked={needsChange}
+                    onChange={(e) => {
+                      setNeedsChange(e.target.checked);
+                      if (!e.target.checked) setCashAmount('');
+                    }}
+                    className="w-5 h-5 rounded accent-orange-500"
+                  />
+                  <label htmlFor="needsChange" className="text-white font-semibold cursor-pointer flex-1">
+                    Preciso de troco
+                  </label>
+                </div>
+
+                {needsChange && (
+                  <div className="animate-in slide-in-from-top-4 duration-200">
+                    <label className="block text-white mb-2 font-semibold">Valor que vai pagar</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="R$ 0,00"
+                      value={cashAmount}
+                      onChange={(e) => {
+                        setCashAmount(e.target.value);
+                        setOrderDetails(prev => ({ ...prev, cashValue: e.target.value, needsChange: true }));
+                      }}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-white text-lg outline-none focus:border-orange-500 transition-all"
+                    />
+                    {cashAmount && parseFloat(cashAmount) > cartTotal && (
+                      <p className="text-green-400 text-sm mt-2 font-semibold">
+                        Troco: R$ {(parseFloat(cashAmount) - cartTotal).toFixed(2)}
+                      </p>
+                    )}
+                    {cashAmount && parseFloat(cashAmount) < cartTotal && (
+                      <p className="text-red-400 text-sm mt-2 font-semibold">
+                        ⚠️ O valor informado é menor que o total do pedido
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-4 mt-8">
+                <button 
+                  onClick={() => setShowCashModal(false)}
+                  className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-2xl transition-all"
+                >
+                  Voltar
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!needsChange) {
+                      setOrderDetails(prev => ({ ...prev, cashValue: '', needsChange: false }));
+                    }
+                    setShowCashModal(false);
+                    setShowCheckout(false);
+                    setShowPayment(true);
+                  }}
+                  disabled={needsChange && (!cashAmount || parseFloat(cashAmount) < cartTotal)}
+                  className="flex-1 py-4 bg-green-600 hover:bg-green-500 disabled:bg-zinc-800 disabled:cursor-not-allowed text-white font-semibold rounded-2xl transition-all flex items-center justify-center gap-2"
+                >
+                  Confirmar <Send size={18} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
