@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import 'express-async-errors';
 import { config } from 'dotenv';
 import { routes } from './routes';
@@ -22,6 +23,9 @@ app.use('/api', generalLimiter);
 
 app.use(express.json());
 
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
 // Routes
 app.use('/api', routes);
 
@@ -37,7 +41,15 @@ app.get('/health', (req, res) => {
 // Error handler
 app.use(tratadorErros);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+});
+
+server.on('error', (error: any) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  }
+  process.exit(1);
 });

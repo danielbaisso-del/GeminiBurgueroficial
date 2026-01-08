@@ -9,5 +9,6 @@ analiticasRotas.use(autenticacaoMiddleware);
 analiticasRotas.get('/dashboard', analiticasController.getDashboard);
 analiticasRotas.get('/period', analiticasController.getByPeriod);
 analiticasRotas.get('/top-products', analiticasController.getTopProducts);
+analiticasRotas.get('/detailed-report', analiticasController.getDetailedReport);
 
 export { analiticasRotas };

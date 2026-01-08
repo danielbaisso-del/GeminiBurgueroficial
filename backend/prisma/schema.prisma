@@ -40,8 +40,12 @@ model Tenant {
   
   // Configurações visuais
   logo         String?
+  banner       String?
   primaryColor String    @default("#ea580c") // orange-600
   secondaryColor String  @default("#18181b") // zinc-950
+  accentColor  String    @default("#f97316") // orange-500
+  textColor    String    @default("#ffffff") // white
+  bgColor      String    @default("#0a0a0a") // dark background
   
   // Endereço
   zipCode      String?

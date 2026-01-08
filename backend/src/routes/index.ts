@@ -6,6 +6,7 @@ import { pedidoRotas } from './pedidoRotas';
 import { categoriaRotas } from './categoriaRotas';
 import { clienteRotas } from './clienteRotas';
 import { analiticasRotas } from './analiticasRotas';
+import configuracaoRotas from './configuracaoRotas';
 
 const routes = Router();
 
@@ -16,5 +17,6 @@ routes.use('/categories', categoriaRotas);
 routes.use('/orders', pedidoRotas);
 routes.use('/customers', clienteRotas);
 routes.use('/analytics', analiticasRotas);
+routes.use('/config', configuracaoRotas);
 
 export { routes };
