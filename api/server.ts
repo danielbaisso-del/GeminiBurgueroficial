@@ -1,6 +1,7 @@
 import serverless from 'serverless-http';
+import { Application } from 'express';
 import createApp from '../backend/src/server';
 
-const app = createApp();
+const app: Application = createApp();
 
-export const handler = serverless(app as any);
+export const handler = serverless(app);
