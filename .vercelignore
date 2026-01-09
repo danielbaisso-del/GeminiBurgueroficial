@@ -1,0 +1,65 @@
+# Development files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.env.local
+.env.*.local
+
+# Documentation (not needed for deployment)
+*.md
+!README.md
+docs/
+
+# Testing
+test/
+tests/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# IMPORTANT: Do NOT exclude backend/src/ - it's needed for serverless function imports!
+# Backend compiled output is not used by Vercel (it compiles on deploy)
+backend/dist/
+
+# Frontend compiled output is not used by Vercel (it builds on deploy)
+frontend/dist/
+
+# Frontend dev config (built by Vercel, but source is needed)
+# Do NOT exclude frontend/src/ or backend/src/
+
+# Dependencies (Vercel installs these)
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Uploads (should use external storage in production)
+backend/uploads/
+uploads/
+
+# Scripts (not needed for runtime)
+scripts/
+backend/create-admin.ts
+backend/seed-products.ts
+backend/check-user.ts
+
+# Prisma migrations (run separately)
+backend/prisma/migrations/
+backend/prisma/seed.ts
