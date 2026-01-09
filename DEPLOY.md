@@ -12,7 +12,199 @@
 
 ---
 
-## 🎯 **OPÇÃO 1: Deploy Fácil (Recomendado para iniciantes)**
+## 🎯 **OPÇÃO 0: Deploy Vercel Monorepo (NOVO - Mais Simples!)**
+
+### **Deploy Completo (Frontend + Backend) no Vercel**
+
+Esta é a opção mais simples para deploy de produção usando Vercel serverless functions.
+
+#### **1. Pré-requisitos**
+
+- Conta Vercel (grátis): https://vercel.com
+- Banco de dados MySQL com conexão pooling (recomendado):
+  - **PlanetScale** (grátis): https://planetscale.com
+  - **Railway** (pago ~$5/mês): https://railway.app
+  - **Supabase** (grátis): https://supabase.com
+- Ou usar **Prisma Data Proxy** para evitar problemas de conexão
+
+#### **2. Configurar Banco de Dados**
+
+**Opção A: PlanetScale (Recomendado para serverless)**
+```bash
+# PlanetScale tem pooling nativo e é ideal para serverless
+# 1. Crie conta em planetscale.com
+# 2. Crie novo database
+# 3. Copie connection string (formato: mysql://...)
+```
+
+**Opção B: Prisma Data Proxy (Para qualquer DB)**
+```bash
+# 1. Acesse: https://cloud.prisma.io
+# 2. Crie projeto e conecte seu banco
+# 3. Habilite Data Proxy
+# 4. Use a connection string do Data Proxy no DATABASE_URL
+```
+
+#### **3. Deploy no Vercel**
+
+**Via Dashboard (Mais Fácil):**
+
+1. Acesse: https://vercel.com/dashboard
+2. Click "Add New Project"
+3. Import seu repositório GitHub
+4. Vercel detecta automaticamente a configuração monorepo
+5. Configure as variáveis de ambiente (ver abaixo)
+6. Click "Deploy"
+
+**Via CLI:**
+
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
+
+# Login
+vercel login
+
+# Deploy (na raiz do projeto)
+vercel
+
+# Seguir prompts e configurar variáveis
+```
+
+#### **4. Variáveis de Ambiente Obrigatórias**
+
+Configure no Vercel Dashboard → Settings → Environment Variables:
+
+```env
+# Database
+DATABASE_URL="mysql://user:pass@host:3306/db?connection_limit=5&pool_timeout=10"
+
+# JWT
+JWT_SECRET="gere-um-secret-forte-com-crypto-random-64-bytes"
+JWT_EXPIRES_IN="7d"
+
+# Environment
+NODE_ENV="production"
+
+# CORS (use seu domínio Vercel)
+CORS_ORIGIN="https://seu-projeto.vercel.app"
+FRONTEND_URL="https://seu-projeto.vercel.app"
+
+# Gemini AI (se necessário)
+GEMINI_API_KEY="sua-chave-gemini"
+
+# Rate Limiting (opcional)
+RATE_LIMIT_WINDOW_MS="60000"
+RATE_LIMIT_MAX_REQUESTS="100"
+```
+
+**⚠️ IMPORTANTE: Gerar JWT_SECRET forte:**
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+#### **5. Configuração do Prisma para Serverless**
+
+**Problema:** Serverless functions criam nova conexão a cada request.
+
+**Soluções:**
+
+**A) Usar PlanetScale (pooling nativo)** ✅ Recomendado
+```env
+DATABASE_URL="mysql://user:pass@aws.connect.psdb.cloud/db?sslaccept=strict"
+```
+
+**B) Usar Prisma Data Proxy** ✅ Funciona com qualquer DB
+```env
+DATABASE_URL="prisma://aws-us-east-1.prisma-data.com/?api_key=..."
+```
+
+**C) Limitar conexões na connection string**
+```env
+DATABASE_URL="mysql://user:pass@host:3306/db?connection_limit=5&pool_timeout=10"
+```
+
+#### **6. Executar Migrações**
+
+Após deploy inicial, execute as migrações:
+
+```bash
+# Localmente, com DATABASE_URL apontando para produção
+DATABASE_URL="sua-url-producao" npx prisma migrate deploy
+
+# Ou via Vercel CLI
+vercel env pull
+cd backend
+npx prisma migrate deploy
+```
+
+#### **7. Testar o Deploy**
+
+```bash
+# Health check
+curl https://seu-projeto.vercel.app/health
+
+# API test
+curl https://seu-projeto.vercel.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"senha"}'
+```
+
+#### **8. Desenvolvimento Local com Vercel**
+
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
+
+# Linkar projeto
+vercel link
+
+# Baixar variáveis de ambiente
+vercel env pull
+
+# Rodar localmente
+vercel dev
+```
+
+#### **9. Limitações e Considerações**
+
+**Vercel Serverless Limits:**
+- **Timeout:** 10s (Hobby), 60s (Pro)
+- **Memory:** 1GB (Hobby), 3GB (Pro)
+- **File Size:** 50MB por função
+
+**Para Uploads de Arquivo:**
+- Limite: 4.5MB via API
+- Para produção, considere:
+  - AWS S3
+  - Cloudinary
+  - Vercel Blob Storage
+
+**Para Background Jobs:**
+- Serverless não é ideal para jobs longos
+- Considere:
+  - Vercel Cron Jobs
+  - Serviços externos (Inngest, QStash)
+
+#### **10. Monitoramento**
+
+- **Logs:** Vercel Dashboard → Deployments → Function Logs
+- **Metrics:** Vercel Dashboard → Analytics
+- **Errors:** Configure Sentry ou similar
+
+#### **11. Domínio Customizado**
+
+```bash
+# Via CLI
+vercel domains add seudominio.com
+
+# Ou via Dashboard
+# Settings → Domains → Add
+```
+
+---
+
+## 🎯 **OPÇÃO 1: Deploy Separado Frontend/Backend (Alternativa)**
 
 ### **Frontend: Vercel (Grátis)**
 
