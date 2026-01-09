@@ -51,6 +51,19 @@
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100">
+    <script>
+        // Limpar localStorage se houver parâmetro reset ou view=customer na URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('reset') === '1' || urlParams.get('view') === 'customer') {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            // Remover parâmetros da URL sem recarregar
+            if (window.history.replaceState) {
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+        }
+    </script>
     <div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
 </body>

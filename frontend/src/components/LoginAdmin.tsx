@@ -19,6 +19,24 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
 
     try {
       console.log('🔐 Tentando fazer login...', { email });
+      
+      // Login de demonstração temporário (sem backend)
+      if (email === 'admin@demo.com' && password === 'demo123') {
+        console.log('✅ Login de demonstração aceito');
+        const mockData = {
+          token: 'demo-token-' + Date.now(),
+          user: { id: '1', name: 'Admin Demo', email: 'admin@demo.com', role: 'OWNER' }
+        };
+        
+        localStorage.setItem('adminToken', mockData.token);
+        localStorage.setItem('adminUser', JSON.stringify(mockData.user));
+        
+        console.log('💾 Dados salvos no localStorage');
+        console.log('🚀 Chamando onLoginSuccess...');
+        onLoginSuccess();
+        return;
+      }
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -129,7 +147,18 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm font-semibold text-blue-900 mb-2">🔑 Credenciais de Demonstração:</p>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p><strong>E-mail:</strong> admin@demo.com</p>
+            <p><strong>Senha:</strong> demo123</p>
+          </div>
+          <p className="text-xs text-blue-600 mt-2">
+            ℹ️ Use estas credenciais para acessar o painel sem banco de dados configurado.
+          </p>
+        </div>
+
+        <div className="mt-4 text-center text-sm text-gray-600">
           <p>Esqueceu sua senha?</p>
           <button className="text-orange-600 hover:text-orange-700 font-medium mt-1">
             Recuperar acesso

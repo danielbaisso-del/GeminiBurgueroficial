@@ -23,7 +23,10 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
   if (!reportData) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-600">Nenhum dado disponível</p>
+        <div className="text-center">
+          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-600">Selecione um período para visualizar o relatório</p>
+        </div>
       </div>
     );
   }
@@ -197,45 +200,111 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
 
       {/* Recent Orders */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos Recentes</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <FileText className="w-5 h-5 text-orange-600" />
+          Todos os Pedidos - Detalhado
+        </h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
+              <tr className="border-b-2 border-gray-300 bg-gray-50">
+                <th className="text-left py-3 px-4 font-semibold text-gray-900">Pedido #</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-900">Data/Hora</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-900">Cliente</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-900">Telefone</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-900">Itens</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Total</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Valor Total</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-900">Pagamento</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-900">Tipo</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Data</th>
               </tr>
             </thead>
             <tbody>
-              {reportData.recentOrders?.map((order: any) => (
-                <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-gray-900">{order.customerName}</td>
-                  <td className="py-3 px-4 text-gray-600">{order.items} {order.items === 1 ? 'item' : 'itens'}</td>
-                  <td className="py-3 px-4 font-semibold text-green-600">R$ {order.total.toFixed(2)}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                      order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
-                      order.status === 'PREPARING' ? 'bg-purple-100 text-purple-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 text-sm">
-                    {new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                  </td>
-                </tr>
+              {reportData.orders?.map((order: any) => (
+                <React.Fragment key={order.id}>
+                  <tr className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-900">{order.orderNumber}</td>
+                    <td className="py-3 px-4 text-gray-900 text-sm whitespace-nowrap">
+                      {new Date(order.createdAt).toLocaleDateString('pt-BR')}<br/>
+                      <span className="text-xs text-gray-700">
+                        {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-gray-900">{order.customerName}</td>
+                    <td className="py-3 px-4 text-gray-900 text-sm">{order.phone}</td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm text-gray-900">
+                        {order.items?.map((item: any, idx: number) => (
+                          <div key={idx} className="mb-1">
+                            <span className="font-medium">{item.quantity}x</span> {item.productName}
+                            <span className="text-gray-700 ml-2">R$ {item.subtotal.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-right font-bold text-green-600 whitespace-nowrap">
+                      R$ {order.total.toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        order.paymentMethod === 'PIX' ? 'bg-teal-100 text-teal-800' :
+                        order.paymentMethod === 'CREDIT_CARD' ? 'bg-blue-100 text-blue-800' :
+                        order.paymentMethod === 'DEBIT_CARD' ? 'bg-indigo-100 text-indigo-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {order.paymentMethod === 'PIX' ? 'PIX' :
+                         order.paymentMethod === 'CREDIT_CARD' ? 'Crédito' :
+                         order.paymentMethod === 'DEBIT_CARD' ? 'Débito' : 'Dinheiro'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        order.type === 'DELIVERY' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {order.type === 'DELIVERY' ? '🚚 Entrega' : '🏃 Retirada'}
+                      </span>
+                      {order.type === 'DELIVERY' && order.deliveryAddress && (
+                        <div className="text-xs text-gray-700 mt-1">
+                          {order.deliveryAddress.street}, {order.deliveryAddress.number} - {order.deliveryAddress.district}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                        order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'PREPARING' ? 'bg-purple-100 text-purple-800' :
+                        order.status === 'READY' ? 'bg-teal-100 text-teal-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {order.status === 'DELIVERED' ? '✓ Entregue' :
+                         order.status === 'PENDING' ? '⏳ Pendente' :
+                         order.status === 'CONFIRMED' ? '✓ Confirmado' :
+                         order.status === 'PREPARING' ? '👨‍🍳 Preparando' :
+                         order.status === 'READY' ? '✓ Pronto' : '✗ Cancelado'}
+                      </span>
+                    </td>
+                  </tr>
+                </React.Fragment>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="bg-gray-100 border-t-2 border-gray-300">
+                <td colSpan={5} className="py-3 px-4 font-bold text-gray-900 text-right">TOTAL GERAL:</td>
+                <td className="py-3 px-4 text-right font-bold text-green-600 text-lg">
+                  R$ {reportData.totalRevenue?.toFixed(2) || '0.00'}
+                </td>
+                <td colSpan={3} className="py-3 px-4 text-gray-900 text-sm">
+                  {reportData.totalOrders || 0} pedidos
+                </td>
+              </tr>
+            </tfoot>
           </table>
-          {(!reportData.recentOrders || reportData.recentOrders.length === 0) && (
+          {(!reportData.orders || reportData.orders.length === 0) && (
             <div className="text-center text-gray-500 py-8">
-              Nenhum pedido no período
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+              <p>Nenhum pedido registrado no período selecionado</p>
             </div>
           )}
         </div>

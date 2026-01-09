@@ -24,6 +24,118 @@ export default function App() {
   const [showCashModal, setShowCashModal] = useState(false);
   const [cashAmount, setCashAmount] = useState('');
   const [needsChange, setNeedsChange] = useState(false);
+  
+  // Carregar configurações do admin
+  const [appConfig, setAppConfig] = useState<any>(() => {
+    const demoConfig = localStorage.getItem('demoConfig');
+    if (demoConfig) {
+      try {
+        return JSON.parse(demoConfig);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+  
+  // Atualizar configurações quando localStorage mudar
+  useEffect(() => {
+    const handleConfigChange = () => {
+      const demoConfig = localStorage.getItem('demoConfig');
+      if (demoConfig) {
+        try {
+          const parsedConfig = JSON.parse(demoConfig);
+          setAppConfig(parsedConfig);
+        } catch (e) {
+          console.error('Erro ao carregar configurações:', e);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleConfigChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleConfigChange);
+    };
+  }, []);
+  
+  // Cor do texto para os inputs (sempre branca para garantir visibilidade)
+  const inputTextColor = '#ffffff';
+  
+  // Helper para converter categoryId em slug (definido ANTES de ser usado)
+  const getCategorySlugById = (categoryId: string) => {
+    const map: Record<string, string> = {
+      '1': 'burgers',
+      '2': 'sides',
+      '3': 'drinks',
+      '4': 'desserts',
+      '5': 'combos',
+      '6': 'alcohol'
+    };
+    return map[categoryId] || 'burgers';
+  };
+  
+  // Carregar produtos do admin se existirem
+  const [menuItems, setMenuItems] = useState<Product[]>(() => {
+    const demoProducts = localStorage.getItem('demoProducts');
+    if (demoProducts) {
+      try {
+        const parsedProducts = JSON.parse(demoProducts);
+        console.log('✅ Produtos carregados do localStorage:', parsedProducts.length);
+        // Converter formato do admin para formato do cliente
+        return parsedProducts.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          category: getCategorySlugById(p.categoryId),
+          image: p.image,
+          tags: []
+        }));
+      } catch (e) {
+        console.error('❌ Erro ao carregar produtos:', e);
+        return MENU_ITEMS;
+      }
+    }
+    console.log('⚠️ Nenhum produto no localStorage, usando MENU_ITEMS');
+    return MENU_ITEMS;
+  });
+  
+  // Atualizar menuItems quando localStorage mudar
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const demoProducts = localStorage.getItem('demoProducts');
+      if (demoProducts) {
+        try {
+          const parsedProducts = JSON.parse(demoProducts);
+          const converted = parsedProducts.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            price: p.price,
+            category: getCategorySlugById(p.categoryId),
+            image: p.image,
+            tags: []
+          }));
+          setMenuItems(converted);
+        } catch (e) {
+          console.error('Erro ao carregar produtos:', e);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Verificar a cada 2 segundos se houve mudança
+    const interval = setInterval(() => {
+      handleStorageChange();
+    }, 2000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const [orderDetails, setOrderDetails] = useState<OrderDetails>({
     customerName: '',
@@ -81,9 +193,9 @@ export default function App() {
   }, [showPayment, orderDetails.paymentMethod, cartTotal]);
 
   const filteredItems = useMemo(() => {
-    if (activeCategory === 'all') return MENU_ITEMS;
-    return MENU_ITEMS.filter(item => item.category === activeCategory);
-  }, [activeCategory]);
+    if (activeCategory === 'all') return menuItems;
+    return menuItems.filter(item => item.category === activeCategory);
+  }, [activeCategory, menuItems]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -208,8 +320,48 @@ ${orderDetails.notes ? `*📝 OBS:* ${orderDetails.notes}` : ''}
 ---
 Aguardando confirmação!`.trim();
 
+    // Salvar pedido no localStorage para o admin visualizar
+    const newOrder = {
+      id: Date.now().toString(),
+      orderNumber: `#${String(Date.now()).slice(-6)}`,
+      customerName: orderDetails.customerName,
+      phone: orderDetails.phone,
+      items: cart.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      total: cartTotal,
+      paymentMethod: orderDetails.paymentMethod,
+      status: 'pending',
+      isDelivery: orderDetails.isDelivery,
+      address: orderDetails.isDelivery ? {
+        street: orderDetails.street,
+        number: orderDetails.number,
+        district: orderDetails.district,
+        zipCode: orderDetails.zipCode,
+        complement: orderDetails.complement,
+        referencePoint: orderDetails.referencePoint,
+        coords: orderDetails.coords
+      } : null,
+      notes: orderDetails.notes,
+      createdAt: new Date().toISOString()
+    };
+
+    // Adicionar ao localStorage
+    const existingOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
+    existingOrders.unshift(newOrder);
+    localStorage.setItem('demoOrders', JSON.stringify(existingOrders));
+
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`, '_blank');
+    
+    // Limpar carrinho após enviar
+    setCart([]);
+    setShowPayment(false);
+    setShowCheckout(false);
+    setShowCardModal(false);
+    setShowCashModal(false);
   };
 
   const categories = [
@@ -230,7 +382,9 @@ Aguardando confirmação!`.trim();
             <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center shadow-lg shadow-orange-600/20">
               <Star className="text-white fill-current" size={24} />
             </div>
-            <h1 className="font-heading text-2xl tracking-wider text-orange-500">GEMINI BURGER</h1>
+            <h1 className="font-heading text-2xl tracking-wider text-orange-500">
+              {appConfig?.businessName || 'GEMINI BURGER'}
+            </h1>
           </div>
           
           <button onClick={() => setIsCartOpen(true)} className="relative p-2 text-zinc-400 hover:text-white transition-colors">
@@ -248,14 +402,26 @@ Aguardando confirmação!`.trim();
         <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Banner" />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
         <div className="relative z-10 max-w-2xl px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-heading mb-4 leading-tight">Escolha seu <span className="text-orange-500">Sabor Inteligente</span></h2>
-          <form onSubmit={handleAiAsk} className="flex gap-2 p-2 bg-zinc-900/90 rounded-2xl border border-zinc-800 focus-within:border-orange-500 transition-all shadow-2xl backdrop-blur-sm">
+          <h2 className="text-4xl md:text-5xl font-heading mb-4 leading-tight">
+            Escolha seu <span className="text-orange-500">Sabor Inteligente</span>
+          </h2>
+          <form 
+            onSubmit={handleAiAsk} 
+            className="flex gap-2 p-2 bg-zinc-900/90 rounded-2xl border border-zinc-800 transition-all shadow-2xl backdrop-blur-sm"
+            onFocus={(e) => e.currentTarget.style.borderColor = appConfig?.primaryColor || '#ea580c'}
+            onBlur={(e) => e.currentTarget.style.borderColor = '#27272a'}
+          >
             <input 
               type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)}
               placeholder="Peça uma recomendação: 'Quero um combo com IPA'..."
-              className="flex-1 bg-transparent px-4 py-2 outline-none text-zinc-100 placeholder:text-zinc-600"
+              className="flex-1 bg-transparent px-4 py-2 outline-none placeholder:text-zinc-600"
+              style={{ color: `${inputTextColor} !important` }}
             />
-            <button type="submit" disabled={isAiLoading} className="bg-orange-600 hover:bg-orange-500 disabled:bg-zinc-800 text-white px-6 py-2 rounded-xl font-semibold transition-all flex items-center gap-2">
+            <button 
+              type="submit" 
+              disabled={isAiLoading} 
+              className="bg-orange-600 hover:bg-orange-500 disabled:bg-zinc-800 text-white px-6 py-2 rounded-xl font-semibold transition-all flex items-center gap-2"
+            >
               {isAiLoading ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
             </button>
           </form>
@@ -329,8 +495,15 @@ Aguardando confirmação!`.trim();
                     <div className="flex-1">
                       <h4 className="font-semibold text-zinc-100 text-lg">{item.name}</h4>
                       <p className="text-orange-500 font-bold">R$ {(item.price * item.quantity).toFixed(2)}</p>
-                      {item.notes && <p className="text-zinc-400 text-xs mt-1 italic">Obs: {item.notes}</p>}
-                      <div className="flex items-center gap-4 mt-3">
+                      {item.notes && (
+                        <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <p className="text-blue-400 text-xs flex items-center gap-1">
+                            <MessageCircle size={12} />
+                            <span className="font-medium">Obs:</span> {item.notes}
+                          </p>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 mt-3">
                         <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
                           <button onClick={() => updateQuantity(item.id, -1)} className="text-zinc-400 hover:text-orange-500 transition-colors"><Minus size={16} /></button>
                           <span className="w-4 text-center font-bold">{item.quantity}</span>
@@ -338,12 +511,25 @@ Aguardando confirmação!`.trim();
                         </div>
                         <button 
                           onClick={() => openNotesModal(item.id)} 
-                          className="text-zinc-600 hover:text-blue-500 transition-colors p-2 bg-zinc-900 rounded-lg border border-zinc-800 hover:border-blue-500"
-                          title="Adicionar observação"
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                            item.notes 
+                              ? 'bg-blue-500/20 border-blue-500 text-blue-400 hover:bg-blue-500/30' 
+                              : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-blue-500 hover:text-blue-400'
+                          }`}
+                          title={item.notes ? "Editar observação" : "Adicionar observação"}
                         >
                           <MessageCircle size={20} />
+                          <span className="text-xs font-medium">
+                            {item.notes ? 'Editar' : 'Obs'}
+                          </span>
                         </button>
-                        <button onClick={() => updateQuantity(item.id, -item.quantity)} className="text-zinc-600 hover:text-red-500 transition-colors"><Trash2 size={20} /></button>
+                        <button 
+                          onClick={() => updateQuantity(item.id, -item.quantity)} 
+                          className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                          title="Remover item"
+                        >
+                          <Trash2 size={20} />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -385,12 +571,12 @@ Aguardando confirmação!`.trim();
                     <div className="space-y-4">
                       <input 
                         type="text" placeholder="Qual seu nome?" 
-                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all"
+                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500 transition-all"
                         value={orderDetails.customerName} onChange={e => setOrderDetails(prev => ({ ...prev, customerName: e.target.value }))}
                       />
                       <input 
                         type="tel" placeholder="WhatsApp (DDD)"
-                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all"
+                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500 transition-all"
                         value={orderDetails.phone} onChange={e => setOrderDetails(prev => ({ ...prev, phone: e.target.value }))}
                       />
                     </div>
@@ -410,7 +596,7 @@ Aguardando confirmação!`.trim();
                           <div className="flex-1 relative">
                             <input 
                               type="text" placeholder="CEP" 
-                              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all"
+                              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500 transition-all"
                               value={orderDetails.zipCode} onChange={e => {
                                 setOrderDetails(prev => ({ ...prev, zipCode: e.target.value }));
                                 fetchAddressByCep(e.target.value);
@@ -428,25 +614,25 @@ Aguardando confirmação!`.trim();
                         </div>
                         <div className="grid grid-cols-4 gap-4">
                           <input 
-                            type="text" placeholder="Rua" className="col-span-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500"
+                            type="text" placeholder="Rua" className="col-span-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500"
                             value={orderDetails.street} onChange={e => setOrderDetails(prev => ({ ...prev, street: e.target.value }))}
                           />
                           <input 
-                            type="text" placeholder="Nº" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 text-center"
+                            type="text" placeholder="Nº" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500 text-center"
                             value={orderDetails.number} onChange={e => setOrderDetails(prev => ({ ...prev, number: e.target.value }))}
                           />
                         </div>
                         <input 
-                          type="text" placeholder="Bairro" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500"
+                          type="text" placeholder="Bairro" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500"
                           value={orderDetails.district} onChange={e => setOrderDetails(prev => ({ ...prev, district: e.target.value }))}
                         />
                         <div className="grid grid-cols-2 gap-4">
                           <input 
-                            type="text" placeholder="Complemento" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500"
+                            type="text" placeholder="Complemento" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500"
                             value={orderDetails.complement} onChange={e => setOrderDetails(prev => ({ ...prev, complement: e.target.value }))}
                           />
                           <input 
-                            type="text" placeholder="Ref. (opcional)" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500"
+                            type="text" placeholder="Ref. (opcional)" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500"
                             value={orderDetails.referencePoint} onChange={e => setOrderDetails(prev => ({ ...prev, referencePoint: e.target.value }))}
                           />
                         </div>
@@ -553,14 +739,16 @@ Aguardando confirmação!`.trim();
                       placeholder="Nome no cartão"
                       value={orderDetails.cardName || ''}
                       onChange={(e) => setOrderDetails(prev => ({ ...prev, cardName: e.target.value }))}
-                      className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500"
+                      className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
+                      style={{ color: `${inputTextColor} !important` }}
                     />
                     <input
                       type="text"
                       placeholder="Número do cartão"
                       value={orderDetails.cardNumber || ''}
                       onChange={(e) => setOrderDetails(prev => ({ ...prev, cardNumber: e.target.value }))}
-                      className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500"
+                      className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
+                      style={{ color: `${inputTextColor} !important` }}
                     />
                     <div className="flex gap-4">
                       <input
@@ -568,14 +756,16 @@ Aguardando confirmação!`.trim();
                         placeholder="MM/AA"
                         value={orderDetails.cardExpiry || ''}
                         onChange={(e) => setOrderDetails(prev => ({ ...prev, cardExpiry: e.target.value }))}
-                        className="flex-1 p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500"
+                        className="flex-1 p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
+                        style={{ color: `${inputTextColor} !important` }}
                       />
                       <input
                         type="text"
                         placeholder="CVV"
                         value={orderDetails.cardCvv || ''}
                         onChange={(e) => setOrderDetails(prev => ({ ...prev, cardCvv: e.target.value }))}
-                        className="flex-1 p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500"
+                        className="flex-1 p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
+                        style={{ color: `${inputTextColor} !important` }}
                       />
                     </div>
                   </div>
@@ -608,38 +798,53 @@ Aguardando confirmação!`.trim();
       {itemNotesModal.isOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemNotesModal({ isOpen: false, itemId: null })} />
-          <div className="relative bg-zinc-900 rounded-3xl max-w-lg w-full shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-zinc-900 rounded-3xl max-w-lg w-full shadow-2xl border-2 border-blue-500/50 animate-in zoom-in-95 duration-200">
             <div className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-heading text-white flex items-center gap-3">
-                  <MessageCircle className="text-orange-500" size={28} />
-                  Observações do Item
+                  <div className="p-3 bg-blue-500/20 rounded-xl">
+                    <MessageCircle className="text-blue-400" size={32} />
+                  </div>
+                  <span>Observações do Item</span>
                 </h3>
                 <button onClick={() => setItemNotesModal({ isOpen: false, itemId: null })} className="p-2 text-zinc-500 hover:text-white bg-zinc-800 rounded-full transition-colors">
                   <X size={24} />
                 </button>
               </div>
-              <p className="text-zinc-400 mb-4 text-sm">
-                Adicione observações específicas para este item (Ex: sem cebola, ponto da carne, etc.)
-              </p>
+              
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-4">
+                <p className="text-blue-400 text-sm font-medium mb-2">💡 Exemplos de observações:</p>
+                <ul className="text-blue-300 text-xs space-y-1 ml-4 list-disc">
+                  <li>Sem cebola</li>
+                  <li>Ponto da carne: mal passada</li>
+                  <li>Sem picles</li>
+                  <li>Molho à parte</li>
+                  <li>Batata bem crocante</li>
+                </ul>
+              </div>
+              
               <textarea
                 value={tempNotes}
                 onChange={(e) => setTempNotes(e.target.value)}
-                placeholder="Digite suas observações aqui..."
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all h-32 resize-none"
+                placeholder="Ex: Sem cebola, ponto da carne bem passado..."
+                className="w-full bg-zinc-800 border-2 border-zinc-700 focus:border-blue-500 rounded-2xl px-6 py-4 text-orange-500 placeholder-zinc-500 outline-none transition-all h-32 resize-none text-base"
+                maxLength={200}
               />
+              <p className="text-zinc-500 text-xs mt-2 text-right">{tempNotes.length}/200 caracteres</p>
+              
               <div className="flex gap-4 mt-6">
                 <button 
                   onClick={() => setItemNotesModal({ isOpen: false, itemId: null })}
-                  className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-2xl transition-all"
+                  className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-2xl transition-all border border-zinc-700"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={saveItemNotes}
-                  className="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-2xl transition-all"
+                  className="flex-1 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
                 >
-                  Salvar
+                  <MessageCircle size={20} />
+                  Salvar Observação
                 </button>
               </div>
             </div>
@@ -717,7 +922,7 @@ Aguardando confirmação!`.trim();
                 <div>
                   <label className="block text-white mb-2 font-semibold">Valor total do pedido</label>
                   <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4">
-                    <p className="text-3xl font-heading text-orange-500">R$ {cartTotal.toFixed(2)}</p>
+                    <p className="text-3xl font-heading" style={{ color: appConfig?.secondaryColor || '#f59e0b' }}>R$ {cartTotal.toFixed(2)}</p>
                   </div>
                 </div>
 
@@ -749,7 +954,8 @@ Aguardando confirmação!`.trim();
                         setCashAmount(e.target.value);
                         setOrderDetails(prev => ({ ...prev, cashValue: e.target.value, needsChange: true }));
                       }}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-white text-lg outline-none focus:border-orange-500 transition-all"
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-lg outline-none focus:border-orange-500 transition-all"
+                      style={{ color: `${inputTextColor} !important` }}
                     />
                     {cashAmount && parseFloat(cashAmount) > cartTotal && (
                       <p className="text-green-400 text-sm mt-2 font-semibold">
@@ -837,7 +1043,14 @@ Aguardando confirmação!`.trim();
       {/* Mobile Sticky Button */}
       {cart.length > 0 && !isCartOpen && (
         <div className="fixed bottom-6 left-4 right-4 z-40 md:hidden animate-in slide-in-from-bottom-4">
-          <button onClick={() => setIsCartOpen(true)} className="w-full bg-orange-600 text-white p-5 rounded-2xl font-bold flex items-center justify-between shadow-2xl shadow-orange-600/40 active:scale-95 transition-transform">
+          <button 
+            onClick={() => setIsCartOpen(true)} 
+            className="w-full text-white p-5 rounded-2xl font-bold flex items-center justify-between shadow-2xl active:scale-95 transition-transform"
+            style={{ 
+              backgroundColor: appConfig?.primaryColor || '#ea580c',
+              boxShadow: `0 25px 50px -12px ${appConfig?.primaryColor || '#ea580c'}66`
+            }}
+          >
             <div className="flex items-center gap-4">
               <div className="bg-white/20 p-2 rounded-xl"><ShoppingCart size={24} /></div>
               <span className="text-lg">Carrinho ({cart.reduce((a,b) => a + b.quantity, 0)})</span>

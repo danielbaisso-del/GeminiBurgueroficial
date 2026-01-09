@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import App from './App';
 import LoginAdmin from './components/LoginAdmin';
 import AdminDashboard from './components/AdminDashboard';
 
 export default function AppRouter() {
   const [currentView, setCurrentView] = useState<'customer' | 'admin' | 'adminDashboard'>(() => {
+    // Verificar parâmetro da URL primeiro
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    if (viewParam === 'customer') {
+      return 'customer';
+    }
+    
     // Verificar se há token de admin salvo
     const token = localStorage.getItem('adminToken');
     return token ? 'adminDashboard' : 'customer';
   });
+  
+  // Removida verificação de backend - funciona em modo demo
 
   const handleAdminLogin = () => {
     setCurrentView('adminDashboard');
@@ -34,7 +43,7 @@ export default function AppRouter() {
   };
 
   // Verificar URL para modo admin
-  React.useEffect(() => {
+  useEffect(() => {
     const path = window.location.pathname;
     if (path.includes('/admin')) {
       handleGoToAdmin();

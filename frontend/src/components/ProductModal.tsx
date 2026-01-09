@@ -75,6 +75,24 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
 
     try {
       const token = localStorage.getItem('adminToken');
+      
+      // Modo demonstração - simular salvamento
+      if (token?.includes('demo-token')) {
+        console.log('💾 Modo demo - simulando salvamento:', formData);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simular delay de rede
+        
+        const savedProduct = {
+          ...formData,
+          id: product?.id || `demo-${Date.now()}`,
+          image: imagePreview || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=800'
+        };
+        
+        onSave(savedProduct);
+        onClose();
+        setIsLoading(false);
+        return;
+      }
+      
       const url = product?.id ? `/api/products/${product.id}` : '/api/products';
       const method = product?.id ? 'PUT' : 'POST';
 

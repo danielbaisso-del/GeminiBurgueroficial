@@ -100,18 +100,353 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   });
 
   useEffect(() => {
-    loadConfig();
-    loadProducts();
-    loadCategories();
-    loadStats();
-    loadOrders();
+    // Verificar se está em modo demo
+    const isDemoMode = localStorage.getItem('adminToken')?.includes('demo-token');
+    
+    if (isDemoMode) {
+      // Carregar dados de demonstração
+      setConfig({
+        businessName: 'Gemini Burger Demo',
+        phone: '(11) 99999-9999',
+        whatsappNumber: '5511999999999',
+        primaryColor: '#ea580c',
+        secondaryColor: '#dc2626',
+        accentColor: '#f59e0b',
+        textColor: '#ffffff',
+        bgColor: '#18181b',
+        city: 'São Paulo',
+        state: 'SP',
+        isOpen: true,
+      });
+      
+      setCategories([
+        { id: '1', name: 'Hambúrgueres', slug: 'burgers' },
+        { id: '2', name: 'Acompanhamentos', slug: 'sides' },
+        { id: '3', name: 'Bebidas', slug: 'drinks' },
+        { id: '4', name: 'Sobremesas', slug: 'desserts' },
+        { id: '5', name: 'Combos', slug: 'combos' },
+        { id: '6', name: 'Bebidas Alcoólicas', slug: 'alcohol' },
+      ]);
+      
+      // Produtos de demonstração - usando os produtos originais do constants/index.ts
+      const mockProducts: Product[] = [
+        // COMBOS
+        {
+          id: 'c1',
+          name: 'Combo Individual Prime',
+          description: '1 Gemini Prime + 1 Batata Rústica Individual + 1 Refrigerante Lata.',
+          price: 58.00,
+          categoryId: '5',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&q=80&w=800'
+        },
+        {
+          id: 'c2',
+          name: 'Combo Casal Smash',
+          description: '2 Super Flash Smash + 1 Batata Rústica Grande + 2 Refrigerantes Lata.',
+          price: 89.90,
+          categoryId: '5',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&q=80&w=800'
+        },
+        {
+          id: 'c3',
+          name: 'Combo Família Monster',
+          description: '4 Burgers (2 Prime, 2 Smash) + 2 Porções de Batata + 1 Coca-Cola 2L.',
+          price: 159.00,
+          categoryId: '5',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&q=80&w=800'
+        },
+        // BURGERS
+        {
+          id: 'b1',
+          name: 'Gemini Prime',
+          description: 'Blend bovino 180g, queijo cheddar artesanal, cebola caramelizada e maionese trufada no pão brioche.',
+          price: 38.90,
+          categoryId: '1',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=800'
+        },
+        {
+          id: 'b6',
+          name: 'Truffle Gorgonzola',
+          description: 'Hambúrguer 180g, creme de gorgonzola premium, mel trufado e rúcula fresca.',
+          price: 45.00,
+          categoryId: '1',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&q=80&w=800'
+        },
+        {
+          id: 'b7',
+          name: 'Monster Double Stack',
+          description: 'Dois burgers de 180g, quatro fatias de cheddar, bacon duplo e pão australiano.',
+          price: 52.00,
+          categoryId: '1',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1586816001966-79b736744398?auto=format&fit=crop&q=80&w=800'
+        },
+        {
+          id: 'b2',
+          name: 'Super Flash Smash',
+          description: 'Dois burgers smash 90g, double cheddar, picles da casa e molho especial.',
+          price: 29.90,
+          categoryId: '1',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&q=80&w=800'
+        },
+        // SIDES
+        {
+          id: 's1',
+          name: 'Batata Rústica Grande',
+          description: 'Batatas com casca temperadas com alecrim, páprica e sal grosso. Acompanha maionese verde.',
+          price: 22.00,
+          categoryId: '2',
+          available: true,
+          image: 'https://png.pngtree.com/png-vector/20250813/ourlarge/pngtree-golden-brown-rustic-potato-wedges-served-with-spices-on-vivid-orange-png-image_16719846.png'
+        },
+        {
+          id: 's4',
+          name: 'Batata com Cheddar e Bacon',
+          description: 'Nossa batata rústica coberta com muito molho cheddar e farofa de bacon.',
+          price: 28.00,
+          categoryId: '2',
+          available: true,
+          image: '/batata-com-cheddar.png'
+        },
+        // DRINKS
+        {
+          id: 'd3',
+          name: 'Coca-Cola 350ml',
+          description: 'Lata gelada.',
+          price: 7.00,
+          categoryId: '3',
+          available: true,
+          image: '/02.png'
+        },
+        {
+          id: 'd6',
+          name: 'Água Mineral c/ Gás',
+          description: 'Garrafa 500ml gelada com rodelas de limão.',
+          price: 5.00,
+          categoryId: '3',
+          available: true,
+          image: '/agua.jpg'
+        },
+        // ALCOHOLIC DRINKS
+        {
+          id: 'a1',
+          name: 'Chopp IPA Artesanal',
+          description: 'Copo de 500ml. Cerveja encorpada com notas cítricas e amargor marcante.',
+          price: 24.00,
+          categoryId: '6',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&q=80&w=800'
+        },
+        {
+          id: 'a2',
+          name: 'Gin Tônica Clássica',
+          description: 'Gin premium, tônica, zimbro e uma rodela de limão siciliano.',
+          price: 28.00,
+          categoryId: '6',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?auto=format&fit=crop&q=80&w=800'
+        },
+        {
+          id: 'a3',
+          name: 'Heineken Long Neck',
+          description: 'Cerveja Premium Lager 330ml gelada.',
+          price: 12.00,
+          categoryId: '6',
+          available: true,
+          image: '/heineken.png'
+        },
+        {
+          id: 'a4',
+          name: 'Caipirinha de Morango',
+          description: 'Morangos frescos, açúcar e cachaça premium ou vodka.',
+          price: 22.00,
+          categoryId: '6',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&q=80&w=800'
+        },
+        // DESSERTS
+        {
+          id: 'e1',
+          name: 'Milkshake Nutella',
+          description: 'Sorvete de baunilha, muita Nutella e chantilly artesanal.',
+          price: 24.00,
+          categoryId: '4',
+          available: true,
+          image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&q=80&w=800'
+        }
+      ];
+      // Forçar atualização IMEDIATA dos produtos - sempre sobrescrever localStorage
+      console.log('📦 Atualizando produtos no localStorage...', mockProducts.length, 'produtos');
+      localStorage.setItem('demoProducts', JSON.stringify(mockProducts));
+      localStorage.setItem('productsVersion', '3.0'); // Incrementar versão para forçar reload
+      setProducts(mockProducts);
+      
+      // Disparar evento para App.tsx detectar
+      window.dispatchEvent(new Event('storage'));
+      
+      setStats({
+        totalOrders: 150,
+        totalRevenue: 12500.00,
+        pendingOrders: 5,
+        totalProducts: mockProducts.length,
+      });
+      
+      // Dados de pedidos para demonstração
+      const mockOrders: Order[] = [
+        {
+          id: '1',
+          orderNumber: '#001',
+          customerName: 'João Silva',
+          phone: '(11) 98765-4321',
+          total: 89.90,
+          status: 'PENDING',
+          type: 'DELIVERY',
+          paymentMethod: 'PIX',
+          createdAt: new Date().toISOString(),
+          items: [
+            { id: '1', productName: 'Gemini Prime', quantity: 2, price: 38.90, subtotal: 77.80 },
+            { id: '2', productName: 'Batata Rústica', quantity: 1, price: 12.10, subtotal: 12.10 }
+          ],
+          deliveryAddress: {
+            street: 'Rua das Flores',
+            number: '123',
+            district: 'Centro',
+            city: 'São Paulo'
+          }
+        },
+        {
+          id: '2',
+          orderNumber: '#002',
+          customerName: 'Maria Santos',
+          phone: '(11) 91234-5678',
+          total: 159.00,
+          status: 'CONFIRMED',
+          type: 'DELIVERY',
+          paymentMethod: 'CREDIT_CARD',
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          items: [
+            { id: '1', productName: 'Combo Família Monster', quantity: 1, price: 159.00, subtotal: 159.00 }
+          ],
+          deliveryAddress: {
+            street: 'Av. Paulista',
+            number: '1000',
+            district: 'Bela Vista',
+            city: 'São Paulo'
+          }
+        },
+        {
+          id: '3',
+          orderNumber: '#003',
+          customerName: 'Pedro Oliveira',
+          phone: '(11) 99876-5432',
+          total: 58.00,
+          status: 'READY',
+          type: 'PICKUP',
+          paymentMethod: 'CASH',
+          createdAt: new Date(Date.now() - 7200000).toISOString(),
+          items: [
+            { id: '1', productName: 'Combo Individual Prime', quantity: 1, price: 58.00, subtotal: 58.00 }
+          ]
+        }
+      ];
+      
+      // Carregar pedidos reais do localStorage
+      const savedOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
+      
+      // Se houver pedidos reais, usá-los; senão, usar mock
+      const ordersToUse = savedOrders.length > 0 ? savedOrders : mockOrders;
+      setOrders(ordersToUse);
+      
+      // Atualizar estatísticas com pedidos reais
+      if (savedOrders.length > 0) {
+        const totalRevenue = savedOrders.reduce((sum: number, order: any) => sum + order.total, 0);
+        const pendingCount = savedOrders.filter((order: any) => order.status === 'pending').length;
+        setStats({
+          totalOrders: savedOrders.length,
+          totalRevenue,
+          pendingOrders: pendingCount,
+          totalProducts: mockProducts.length,
+        });
+      }
+      
+      console.log('✅ Modo demonstração ativado - dados mockados carregados');
+      
+      // Listener para atualizar pedidos em tempo real
+      const orderUpdateInterval = setInterval(() => {
+        const currentOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
+        if (currentOrders.length > 0) {
+          setOrders(currentOrders);
+          const totalRevenue = currentOrders.reduce((sum: number, order: any) => sum + order.total, 0);
+          const pendingCount = currentOrders.filter((order: any) => order.status === 'pending').length;
+          setStats((prev) => ({
+            ...prev,
+            totalOrders: currentOrders.length,
+            totalRevenue,
+            pendingOrders: pendingCount,
+          }));
+        }
+      }, 3000); // Verifica a cada 3 segundos
+      
+      return () => clearInterval(orderUpdateInterval);
+    } else {
+      loadConfig();
+      loadProducts();
+      loadCategories();
+      loadStats();
+      loadOrders();
+    }
   }, []);
 
   useEffect(() => {
     if (activeTab === 'reports') {
-      loadReport(reportPeriod);
+      const isDemoMode = localStorage.getItem('adminToken')?.includes('demo-token');
+      if (isDemoMode) {
+        // Gerar relatório de demonstração
+        generateDemoReport(reportPeriod);
+      } else {
+        loadReport(reportPeriod);
+      }
     }
   }, [activeTab, reportPeriod]);
+  
+  const generateDemoReport = (period: 'daily' | 'weekly' | 'monthly') => {
+    const now = new Date();
+    const daysCount = period === 'daily' ? 1 : period === 'weekly' ? 7 : 30;
+    
+    const mockReport = {
+      period,
+      totalOrders: Math.floor(Math.random() * 50) + daysCount * 10,
+      totalRevenue: Math.floor(Math.random() * 5000) + daysCount * 500,
+      avgOrderValue: 85.50,
+      topProducts: [
+        { name: 'Gemini Prime', quantity: 45, revenue: 1750.50 },
+        { name: 'Super Flash Smash', quantity: 38, revenue: 1136.20 },
+        { name: 'Combo Família Monster', quantity: 25, revenue: 3975.00 },
+      ],
+      orders: orders.map((order, idx) => ({
+        ...order,
+        createdAt: new Date(now.getTime() - idx * 3600000 * 12).toISOString()
+      })),
+      paymentMethods: {
+        PIX: 45,
+        CREDIT_CARD: 30,
+        DEBIT_CARD: 15,
+        CASH: 10
+      },
+      deliveryTypes: {
+        DELIVERY: 75,
+        PICKUP: 25
+      }
+    };
+    
+    setReportData(mockReport);
+  };
 
   const loadOrders = async () => {
     try {
@@ -141,7 +476,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       });
 
       if (!response.ok) {
-        console.error('Erro ao carregar config:', response.status);
+        console.warn('⚠️ Não foi possível carregar configurações do servidor');
         return;
       }
       
@@ -150,7 +485,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setConfig(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
+      console.warn('⚠️ Backend indisponível, usando modo demonstração');
     }
   };
 
@@ -168,7 +503,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setProducts(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
+      console.warn('⚠️ Não foi possível carregar produtos');
     }
   };
 
@@ -186,7 +521,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setCategories(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
+      console.warn('⚠️ Não foi possível carregar categorias');
     }
   };
 
@@ -209,7 +544,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+      console.warn('⚠️ Não foi possível carregar estatísticas');
     }
   };
 
@@ -240,6 +575,16 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setIsSaving(true);
     try {
       const token = localStorage.getItem('adminToken');
+      
+      // Modo demonstração - salvar no localStorage
+      if (token?.includes('demo-token')) {
+        localStorage.setItem('demoConfig', JSON.stringify(config));
+        console.log('✅ Configurações salvas no modo demo:', config);
+        alert('Configurações salvas com sucesso!');
+        setIsSaving(false);
+        return;
+      }
+      
       const response = await fetch('/api/config', {
         method: 'PUT',
         headers: {
@@ -250,6 +595,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       });
       
       if (response.ok) {
+        localStorage.setItem('demoConfig', JSON.stringify(config));
         alert('Configurações salvas com sucesso!');
       }
     } catch (error) {
@@ -275,6 +621,17 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     
     try {
       const token = localStorage.getItem('adminToken');
+      
+      // Modo demonstração
+      if (token?.includes('demo-token')) {
+        const updatedProducts = products.filter(p => p.id !== id);
+        setProducts(updatedProducts);
+        localStorage.setItem('demoProducts', JSON.stringify(updatedProducts));
+        console.log('✅ Produto excluído no modo demo');
+        alert('Produto excluído com sucesso!');
+        return;
+      }
+      
       const response = await fetch(`/api/products/${id}`, {
         method: 'DELETE',
         headers: {
@@ -295,6 +652,18 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const toggleProductAvailability = async (id: string, available: boolean) => {
     try {
       const token = localStorage.getItem('adminToken');
+      
+      // Modo demonstração
+      if (token?.includes('demo-token')) {
+        const updatedProducts = products.map(p => 
+          p.id === id ? { ...p, available: !available } : p
+        );
+        setProducts(updatedProducts);
+        localStorage.setItem('demoProducts', JSON.stringify(updatedProducts));
+        console.log('✅ Disponibilidade alterada no modo demo');
+        return;
+      }
+      
       const response = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: {
@@ -531,6 +900,175 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <Package className="w-6 h-6 text-purple-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Ações Rápidas */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button
+                  onClick={() => {
+                    setActiveTab('products');
+                    setShowProductModal(true);
+                  }}
+                  className="flex items-center gap-3 p-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition"
+                >
+                  <Plus className="w-5 h-5" />
+                  <div className="text-left">
+                    <p className="font-medium">Adicionar Produto</p>
+                    <p className="text-sm opacity-90">Cadastrar novo item</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  <div className="text-left">
+                    <p className="font-medium">Ver Pedidos</p>
+                    <p className="text-sm opacity-90">{stats.pendingOrders} pendentes</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('reports')}
+                  className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition"
+                >
+                  <FileText className="w-5 h-5" />
+                  <div className="text-left">
+                    <p className="font-medium">Relatórios</p>
+                    <p className="text-sm opacity-90">Análises e vendas</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Produtos por Categoria */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Produtos por Categoria</h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {categories.map(cat => {
+                  const count = products.filter(p => p.categoryId === cat.id).length;
+                  const available = products.filter(p => p.categoryId === cat.id && p.available).length;
+                  return (
+                    <div key={cat.id} className="bg-gray-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-gray-900">{count}</p>
+                      <p className="text-sm text-gray-600">{cat.name}</p>
+                      <p className="text-xs text-green-600 mt-1">{available} disponíveis</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Pedidos Recentes */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Pedidos Recentes</h3>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  Ver todos →
+                </button>
+              </div>
+              <div className="space-y-3">
+                {orders.slice(0, 5).map(order => (
+                  <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setShowOrderDetails(true);
+                    }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        order.status === 'PENDING' ? 'bg-yellow-100' :
+                        order.status === 'CONFIRMED' ? 'bg-blue-100' :
+                        order.status === 'PREPARING' ? 'bg-purple-100' :
+                        order.status === 'READY' ? 'bg-teal-100' :
+                        order.status === 'DELIVERED' ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                        {order.status === 'PENDING' ? <Clock className="w-5 h-5 text-yellow-600" /> :
+                         order.status === 'DELIVERED' ? <CheckCircle className="w-5 h-5 text-green-600" /> :
+                         <ShoppingBag className="w-5 h-5 text-blue-600" />}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{order.orderNumber} - {order.customerName}</p>
+                        <p className="text-sm text-gray-600">{order.items.length} itens • {order.type === 'DELIVERY' ? '🚚 Entrega' : '🏃 Retirada'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-900">R$ {order.total.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </div>
+                ))}
+                {orders.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p>Nenhum pedido registrado ainda</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Status do Sistema */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Status da Loja</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Modo de Operação</span>
+                    <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                      Demo
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Loja Aberta</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      config?.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {config?.isOpen ? 'Sim' : 'Não'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Produtos Ativos</span>
+                    <span className="font-bold text-gray-900">
+                      {products.filter(p => p.available).length} / {products.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Próximas Ações</h3>
+                <div className="space-y-2">
+                  {stats.pendingOrders > 0 && (
+                    <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
+                      <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Pedidos Pendentes</p>
+                        <p className="text-xs text-gray-600">{stats.pendingOrders} pedidos aguardando confirmação</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                    <Package className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Gerenciar Estoque</p>
+                      <p className="text-xs text-gray-600">Verifique disponibilidade dos produtos</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                    <FileText className="w-5 h-5 text-purple-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Revisar Relatórios</p>
+                      <p className="text-xs text-gray-600">Análise de vendas disponível</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -879,68 +1417,146 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Palette className="w-5 h-5" />
-                Cores e Identidade Visual
+                Personalização Visual
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2" style={{ color: '#111827' }}>
-                    Cor Primária
-                  </label>
-                  <input
-                    type="color"
-                    value={config.primaryColor}
-                    onChange={(e) => setConfig({ ...config, primaryColor: e.target.value })}
-                    className="w-full h-12 rounded-lg cursor-pointer"
-                  />
-                  <span className="text-xs text-gray-500 mt-1 block">{config.primaryColor}</span>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">✨ Personalização Ativa!</h4>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  As cores abaixo serão <strong>aplicadas automaticamente</strong> no site do cliente. 
+                  Experimente diferentes combinações e veja as mudanças em tempo real!
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-semibold text-green-900 mb-2">🎨 Onde cada cor é aplicada:</h4>
+                <ul className="text-sm text-green-800 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold min-w-[120px]">Cor Primária:</span>
+                    <span>Logo, botões principais, destaques, ícones, badge do carrinho</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold min-w-[120px]">Cor Secundária:</span>
+                    <span>Preços dos produtos, títulos, elementos secundários</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold min-w-[120px]">Cor de Destaque:</span>
+                    <span>Botões hover, efeitos especiais, animações</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold min-w-[120px]">Cor do Texto:</span>
+                    <span>Campos de input quando o cliente digita (nome, endereço, etc.)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold min-w-[120px]">Cor de Fundo:</span>
+                    <span>Fundo dos campos de input e elementos de formulário</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">🎨 Preview das Cores Atuais</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="text-center">
+                    <div 
+                      className="w-16 h-16 rounded-lg mx-auto mb-2 border-2 border-gray-300"
+                      style={{ backgroundColor: config.primaryColor }}
+                    ></div>
+                    <p className="text-xs font-medium text-gray-700">Cor Primária</p>
+                    <p className="text-xs text-gray-500">{config.primaryColor}</p>
+                  </div>
+                  <div className="text-center">
+                    <div 
+                      className="w-16 h-16 rounded-lg mx-auto mb-2 border-2 border-gray-300"
+                      style={{ backgroundColor: config.secondaryColor }}
+                    ></div>
+                    <p className="text-xs font-medium text-gray-700">Cor Secundária</p>
+                    <p className="text-xs text-gray-500">{config.secondaryColor}</p>
+                  </div>
+                  <div className="text-center">
+                    <div 
+                      className="w-16 h-16 rounded-lg mx-auto mb-2 border-2 border-gray-300"
+                      style={{ backgroundColor: config.accentColor }}
+                    ></div>
+                    <p className="text-xs font-medium text-gray-700">Cor de Destaque</p>
+                    <p className="text-xs text-gray-500">{config.accentColor}</p>
+                  </div>
+                  <div className="text-center">
+                    <div 
+                      className="w-16 h-16 rounded-lg mx-auto mb-2 border-2 border-gray-300 flex items-center justify-center"
+                      style={{ backgroundColor: config.bgColor }}
+                    >
+                      <span style={{ color: config.textColor }} className="text-sm font-bold">Aa</span>
+                    </div>
+                    <p className="text-xs font-medium text-gray-700">Texto em Fundo</p>
+                    <p className="text-xs text-gray-500">{config.textColor} / {config.bgColor}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2" style={{ color: '#111827' }}>
-                    Cor Secundária
-                  </label>
-                  <input
-                    type="color"
-                    value={config.secondaryColor}
-                    onChange={(e) => setConfig({ ...config, secondaryColor: e.target.value })}
-                    className="w-full h-12 rounded-lg cursor-pointer"
-                  />
-                  <span className="text-xs text-gray-500 mt-1 block">{config.secondaryColor}</span>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2" style={{ color: '#111827' }}>
-                    Cor de Destaque
-                  </label>
-                  <input
-                    type="color"
-                    value={config.accentColor}
-                    onChange={(e) => setConfig({ ...config, accentColor: e.target.value })}
-                    className="w-full h-12 rounded-lg cursor-pointer"
-                  />
-                  <span className="text-xs text-gray-500 mt-1 block">{config.accentColor}</span>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2" style={{ color: '#111827' }}>
-                    Cor do Texto
-                  </label>
-                  <input
-                    type="color"
-                    value={config.textColor}
-                    onChange={(e) => setConfig({ ...config, textColor: e.target.value })}
-                    className="w-full h-12 rounded-lg cursor-pointer"
-                  />
-                  <span className="text-xs text-gray-500 mt-1 block">{config.textColor}</span>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2" style={{ color: '#111827' }}>
-                    Cor de Fundo
-                  </label>
-                  <input
-                    type="color"
-                    value={config.bgColor}
-                    onChange={(e) => setConfig({ ...config, bgColor: e.target.value })}
-                    className="w-full h-12 rounded-lg cursor-pointer"
-                  />
-                  <span className="text-xs text-gray-500 mt-1 block">{config.bgColor}</span>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4">🎨 Editar Cores</h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Cor Primária
+                    </label>
+                    <input
+                      type="color"
+                      value={config.primaryColor}
+                      onChange={(e) => setConfig({ ...config, primaryColor: e.target.value })}
+                      className="w-full h-12 rounded-lg cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">{config.primaryColor}</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Cor Secundária
+                    </label>
+                    <input
+                      type="color"
+                      value={config.secondaryColor}
+                      onChange={(e) => setConfig({ ...config, secondaryColor: e.target.value })}
+                      className="w-full h-12 rounded-lg cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">{config.secondaryColor}</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Cor de Destaque
+                    </label>
+                    <input
+                      type="color"
+                      value={config.accentColor}
+                      onChange={(e) => setConfig({ ...config, accentColor: e.target.value })}
+                      className="w-full h-12 rounded-lg cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">{config.accentColor}</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Cor do Texto
+                    </label>
+                    <input
+                      type="color"
+                      value={config.textColor}
+                      onChange={(e) => setConfig({ ...config, textColor: e.target.value })}
+                      className="w-full h-12 rounded-lg cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">{config.textColor}</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Cor de Fundo
+                    </label>
+                    <input
+                      type="color"
+                      value={config.bgColor}
+                      onChange={(e) => setConfig({ ...config, bgColor: e.target.value })}
+                      className="w-full h-12 rounded-lg cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">{config.bgColor}</span>
+                  </div>
                 </div>
               </div>
 
@@ -1093,10 +1709,32 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             setEditingProduct(null);
           }}
           onSave={(product) => {
-            if (editingProduct) {
-              loadProducts();
+            // Modo demo - atualizar produtos localmente
+            const isDemoMode = localStorage.getItem('adminToken')?.includes('demo-token');
+            
+            if (isDemoMode) {
+              let updatedProducts;
+              if (editingProduct) {
+                // Editar produto existente
+                updatedProducts = products.map(p => p.id === product.id ? product : p);
+                console.log('✅ Produto editado no modo demo:', product);
+              } else {
+                // Adicionar novo produto
+                updatedProducts = [...products, product];
+                console.log('✅ Novo produto adicionado no modo demo:', product);
+              }
+              setProducts(updatedProducts);
+              // Sincronizar com localStorage para o cliente ver as mudanças
+              localStorage.setItem('demoProducts', JSON.stringify(updatedProducts));
+              setShowProductModal(false);
+              setEditingProduct(null);
             } else {
-              loadProducts();
+              // Modo real - recarregar da API
+              if (editingProduct) {
+                loadProducts();
+              } else {
+                loadProducts();
+              }
             }
           }}
           product={editingProduct}
