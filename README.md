@@ -1,20 +1,31 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Gemini Burger (monorepo)
 
-# Run and deploy your AI Studio app
+Resumo rápido:
+- Frontend: `frontend/` (Vite)
+- Backend: `backend/` (Express + Prisma)
+- Serverless functions: `api/` (Vercel)
 
-This contains everything you need to run your app locally.
+Local
+1. Backend
+   cd backend
+   npm install
+   cp .env.example .env
+   npx prisma generate
+   npx prisma migrate dev
+   npm run dev
 
-View your app in AI Studio: https://ai.studio/apps/temp/1
+2. Frontend
+   cd frontend
+   npm install
+   npm run dev
 
-## Run Locally
+Deploy no Vercel
+- Branch sugerida: `feature/vercel-deploy`
+- Adicione variáveis no painel do Vercel:
+  - `DATABASE_URL`
+  - `JWT_SECRET`
+  - `GEMINI_API_KEY` (opcional)
+- Para evitar exaustão de conexões do Prisma em serverless, considere usar Prisma Data Proxy ou hospedar o DB em instância com conexões persistentes.
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `VITE_GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+CI
+- Use o arquivo `.github/workflows/ci.yml` (exemplo na raiz) para validar builds.
