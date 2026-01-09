@@ -237,7 +237,14 @@ export class AnaliticasController {
 
     // Pedidos por localização (bairro)
     const ordersByLocation = orders.reduce((acc: any, order) => {
-      const location = order.deliveryDistrict || 'Não informado';
+      // Extrai o bairro do endereço de entrega, se existir
+      let location = 'Não informado';
+      if (order.deliveryAddress && typeof order.deliveryAddress === 'object' && !Array.isArray(order.deliveryAddress)) {
+        const addr = order.deliveryAddress as { district?: string };
+        if (addr.district) {
+          location = addr.district;
+        }
+      }
       if (!acc[location]) {
         acc[location] = {
           location,
@@ -268,7 +275,7 @@ export class AnaliticasController {
       ordersByLocation: locationStats,
       recentOrders: orders.slice(0, 20).map((order) => ({
         id: order.id,
-        customerName: order.customerName,
+        customerName: order.customer?.name || '',
         total: Number(order.total),
         status: order.status,
         createdAt: order.createdAt,
