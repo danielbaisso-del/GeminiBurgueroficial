@@ -1,5 +1,6 @@
 
 import { Product } from '../types';
+import { getImagePath } from '../utils/image';
 
 export const MENU_ITEMS: Product[] = [
   // COMBOS
@@ -83,7 +84,7 @@ export const MENU_ITEMS: Product[] = [
     description: 'Nossa batata rústica coberta com muito molho cheddar e farofa de bacon.',
     price: 28.00,
     category: 'sides',
-    image: '/batata-com-cheddar.png'
+    image: getImagePath('batata-com-cheddar.png')
   },
 
   // DRINKS (NON-ALCOHOLIC)
@@ -93,7 +94,7 @@ export const MENU_ITEMS: Product[] = [
     description: 'Lata gelada.',
     price: 7.00,
     category: 'drinks',
-    image: '/02.png'
+    image: getImagePath('02.png')
   },
   {
     id: 'd6',
@@ -101,7 +102,7 @@ export const MENU_ITEMS: Product[] = [
     description: 'Garrafa 500ml gelada com rodelas de limão.',
     price: 5.00,
     category: 'drinks',
-    image: '/agua.jpg'
+    image: getImagePath('agua.jpg')
   },
 
   // ALCOHOLIC DRINKS
@@ -128,7 +129,7 @@ export const MENU_ITEMS: Product[] = [
     description: 'Cerveja Premium Lager 330ml gelada.',
     price: 12.00,
     category: 'alcohol',
-    image: '/heineken.png'
+    image: getImagePath('heineken.png')
   },
   {
     id: 'a4',

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import ProductModal from './ProductModal';
 import ReportsTab from './ReportsTab';
+import { getImagePath } from '../utils/image';
 
 interface Product {
   id: string;
@@ -212,7 +213,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           price: 28.00,
           categoryId: '2',
           available: true,
-          image: '/batata-com-cheddar.png'
+          image: getImagePath('batata-com-cheddar.png')
         },
         // DRINKS
         {
@@ -222,7 +223,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           price: 7.00,
           categoryId: '3',
           available: true,
-          image: '/02.png'
+          image: getImagePath('02.png')
         },
         {
           id: 'd6',
@@ -231,7 +232,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           price: 5.00,
           categoryId: '3',
           available: true,
-          image: '/agua.jpg'
+          image: getImagePath('agua.jpg')
         },
         // ALCOHOLIC DRINKS
         {
@@ -259,7 +260,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           price: 12.00,
           categoryId: '6',
           available: true,
-          image: '/heineken.png'
+          image: getImagePath('heineken.png')
         },
         {
           id: 'a4',
