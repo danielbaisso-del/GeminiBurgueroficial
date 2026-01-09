@@ -5,7 +5,7 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "frontend/dist"
       }
     },
     {
@@ -19,6 +19,10 @@
       "dest": "/api/server.ts"
     },
     {
+      "src": "/health",
+      "dest": "/api/server.ts"
+    },
+    {
       "src": "/uploads/(.*)",
       "dest": "/uploads/$1"
     },
@@ -27,7 +31,6 @@
       "dest": "/frontend/dist/$1"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "installCommand": "npm install --prefix backend && npm install --prefix frontend && npm install --prefix api",
+  "buildCommand": "npm run build --prefix backend && npm run build --prefix frontend"
 }
