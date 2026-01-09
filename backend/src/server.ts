@@ -16,7 +16,7 @@ config();
  */
 function createApp() {
   const app = express();
-  const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+  const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
   // Middlewares
   app.use(cors({
@@ -24,12 +24,11 @@ function createApp() {
     credentials: true,
   }));
 
-  // Rate limiting - apply globally in serverless, to /api in traditional server
-  if (isServerless) {
-    app.use(generalLimiter);
-  } else {
-    app.use('/api', generalLimiter);
-  }
+  // Rate limiting
+  // In serverless (Vercel), routes are already prefixed with /api by routing config
+  // In traditional server, we apply rate limiting to /api routes
+  // To keep consistent behavior, we apply rate limiting globally
+  app.use(generalLimiter);
 
   app.use(express.json());
 

@@ -6,11 +6,11 @@
  */
 
 import serverless from 'serverless-http';
+import { Application } from 'express';
 import createApp from '../backend/src/server';
 
 // Create the Express app instance
 const app = createApp();
 
-// Export the serverless handler
-// The 'as any' cast is needed due to type compatibility between Express and serverless-http
-export const handler = serverless(app as any);
+// Export the serverless handler with proper type
+export const handler = serverless(app as Application);
