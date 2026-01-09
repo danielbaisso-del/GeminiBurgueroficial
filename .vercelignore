@@ -35,36 +35,31 @@ docker-compose.yml
 Dockerfile
 .dockerignore
 
-# Backend source (we deploy compiled version)
-backend/src/
-backend/tsconfig.json
-
-# Frontend source (we deploy built version)
-frontend/src/
-frontend/tsconfig.json
-frontend/vite.config.ts
-frontend/tailwind.config.js
-frontend/postcss.config.js
-
-# Build artifacts from local builds
+# IMPORTANT: Do NOT exclude backend/src/ - it's needed for serverless function imports!
+# Backend compiled output is not used by Vercel (it compiles on deploy)
 backend/dist/
+
+# Frontend compiled output is not used by Vercel (it builds on deploy)
 frontend/dist/
+
+# Frontend dev config (built by Vercel, but source is needed)
+# Do NOT exclude frontend/src/ or backend/src/
 
 # Dependencies (Vercel installs these)
 node_modules/
 backend/node_modules/
 frontend/node_modules/
 
-# Uploads (should use external storage)
+# Uploads (should use external storage in production)
 backend/uploads/
 uploads/
 
-# Scripts
+# Scripts (not needed for runtime)
 scripts/
 backend/create-admin.ts
 backend/seed-products.ts
 backend/check-user.ts
 
-# Prisma (generated on build)
+# Prisma migrations (run separately)
 backend/prisma/migrations/
 backend/prisma/seed.ts

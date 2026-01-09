@@ -3,4 +3,6 @@ import createApp from '../backend/src/server';
 
 const app = createApp();
 
-export default serverless(app as any);
+// Export handler for Vercel serverless functions
+// serverless-http wraps Express app for AWS Lambda-compatible environments
+export default serverless(app);

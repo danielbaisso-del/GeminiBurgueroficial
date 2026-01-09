@@ -11,8 +11,25 @@ import { generalLimiter } from './middlewares/rateLimiter';
 config();
 
 /**
- * Creates and configures the Express application
- * @returns Configured Express app
+ * Creates and configures the Express application for both traditional and serverless deployment
+ * 
+ * This function is designed to be compatible with:
+ * - Traditional Node.js server deployment (when run directly)
+ * - Vercel serverless functions (when imported and wrapped with serverless-http)
+ * 
+ * Configuration:
+ * - CORS: Configured from CORS_ORIGIN or FRONTEND_URL environment variables
+ * - Rate Limiting: Applied to /api routes (consider external limiter for production serverless)
+ * - Static Files: Serves /uploads directory (use external storage for serverless production)
+ * - Error Handling: Centralized error handler middleware
+ * 
+ * Important for Serverless Deployment:
+ * - Ensure DATABASE_URL is set with connection pooling (Prisma Data Proxy recommended)
+ * - Cold starts may take 1-3s for Prisma Client initialization
+ * - File uploads should use external storage (Vercel Blob, S3, Cloudinary)
+ * - Rate limiting works per-function-instance; consider Redis-based solution
+ * 
+ * @returns Configured Express Application instance
  */
 export function createApp(): Application {
   const app = express();
