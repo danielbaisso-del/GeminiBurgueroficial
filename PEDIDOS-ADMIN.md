@@ -4,7 +4,6 @@
 
 Implementei uma **área completa de gerenciamento de pedidos** no painel administrativo!
 
----
 
 ## 🚀 O QUE FOI ADICIONADO
 
@@ -12,8 +11,6 @@ Implementei uma **área completa de gerenciamento de pedidos** no painel adminis
 A área administrativa agora possui uma nova aba dedicada exclusivamente para gerenciar pedidos com:
 
 #### ✅ Visualização de Pedidos
-- **Lista completa** de todos os pedidos
-- **Filtros rápidos** por status:
   - Todos
   - Pendentes
   - Confirmados
@@ -22,69 +19,28 @@ A área administrativa agora possui uma nova aba dedicada exclusivamente para ge
   
 #### ✅ Informações Detalhadas
 Cada pedido exibe:
-- **Número do pedido** (#0001, #0002, etc.)
-- **Status visual** com cores (badges coloridos)
-- **Nome do cliente**
-- **Telefone**
-- **Tipo** (Delivery 🚚 ou Retirada 🏪)
-- **Valor total** em destaque
-- **Data e hora** do pedido
-- **Quantidade de itens**
 
 #### ✅ Ações Rápidas
 Botões de ação diretamente na lista:
-- **✓ Confirmar** (para pedidos pendentes)
-- **🍳 Preparar** (para pedidos confirmados)
-- **✓ Pronto** (para pedidos em preparo)
-- **✓ Entregar** (para pedidos prontos)
-- **✕ Cancelar** (disponível para todos menos entregues)
-- **👁️ Detalhes** (ver informações completas)
 
 #### ✅ Modal de Detalhes Completo
 Ao clicar em um pedido, abre modal com:
 
 **Informações do Cliente:**
-- Nome completo
-- Telefone
-- Tipo de pedido
-- Forma de pagamento (PIX, Cartão, Dinheiro)
 
 **Endereço de Entrega:**
-- Rua, número
-- Bairro, cidade
-- (Apenas para delivery)
 
 **Itens do Pedido:**
-- Nome do produto
-- Quantidade
-- Preço unitário
-- Subtotal por item
 
 **Total do Pedido:**
-- Valor total em destaque
-- Botões para mudar status
-- Opção de cancelar
 
----
 
 ## 🎨 DESIGN E UX
 
 ### Status com Cores
-- 🟡 **Pendente** - Amarelo
-- 🔵 **Confirmado** - Azul
-- 🟣 **Preparando** - Roxo
-- 🟠 **Pronto** - Laranja
-- 🟢 **Entregue** - Verde
-- 🔴 **Cancelado** - Vermelho
 
 ### Interface Intuitiva
-- Cards grandes e legíveis
-- Informações importantes em destaque
-- Botões de ação contextuais
-- Modal responsivo para detalhes
-- Feedback visual em todas as ações
 
----
 
 ## 🔄 FLUXO DE TRABALHO
 
@@ -107,9 +63,7 @@ Ao clicar em um pedido, abre modal com:
 ```
 
 A qualquer momento (exceto entregue), você pode:
-- **Cancelar** o pedido
 
----
 
 ## 📊 COMO USAR
 
@@ -122,12 +76,6 @@ A qualquer momento (exceto entregue), você pode:
 
 ### 2. Filtrar Pedidos
 ```
-- Clique nos botões de filtro no topo
-- "Todos" - mostra todos os pedidos
-- "Pendentes" - apenas pedidos aguardando confirmação
-- "Confirmados" - pedidos aceitos
-- "Preparando" - pedidos em preparo
-- "Entregues" - pedidos concluídos
 ```
 
 ### 3. Gerenciar um Pedido
@@ -163,26 +111,15 @@ Opção 2 - Ver Detalhes:
 4. Lista atualiza em tempo real
 ```
 
----
 
 ## 🔧 CONFIGURAÇÃO TÉCNICA
 
 ### Backend
 ✅ Rotas já existiam e foram corrigidas
-- `GET /api/orders` - Lista pedidos
-- `GET /api/orders/:id` - Detalhes do pedido
-- `PATCH /api/orders/:id/status` - Atualizar status
-- `DELETE /api/orders/:id` - Cancelar pedido
 
 ### Frontend
 ✅ Novo código adicionado ao AdminDashboard
-- Interface Order criada
-- Estados de pedidos gerenciados
-- Filtros funcionais
-- Modal de detalhes completo
-- Atualização em tempo real
 
----
 
 ## 📱 VISUALIZAÇÃO
 
@@ -253,52 +190,27 @@ Opção 2 - Ver Detalhes:
 └────────────────────────────────────────────────┘
 ```
 
----
 
 ## ✨ BENEFÍCIOS
 
 ### Para o Administrador
-- ✅ Visão completa de todos os pedidos
-- ✅ Filtros rápidos por status
-- ✅ Atualização de status com 1 clique
-- ✅ Acesso a informações detalhadas
-- ✅ Interface intuitiva e rápida
 
 ### Para o Negócio
-- ✅ Melhor controle operacional
-- ✅ Redução de erros
-- ✅ Aumento da eficiência
-- ✅ Melhor experiência do cliente
-- ✅ Histórico completo de pedidos
 
----
 
 ## 🎯 PRÓXIMOS PASSOS (OPCIONAL)
 
 ### Melhorias Futuras Sugeridas
-- [ ] Notificação sonora para novos pedidos
-- [ ] Impressão de pedidos
-- [ ] Tempo estimado de preparo
-- [ ] Histórico de alterações de status
-- [ ] Filtro por data
-- [ ] Busca por número do pedido ou cliente
-- [ ] Exportação de relatórios
-- [ ] Integração com impressora térmica
 
----
 
 ## 📝 RESUMO DOS ARQUIVOS MODIFICADOS
 
 ### Frontend
-- ✅ `frontend/src/components/AdminDashboard.tsx` - Adicionada aba de pedidos completa
 
 ### Backend
-- ✅ `backend/src/controllers/PedidoController.ts` - Corrigido para usar req.tenantId
 
 ### Rotas (já existiam)
-- ✅ `backend/src/routes/pedidoRotas.ts` - Rotas já estavam configuradas
 
----
 
 ## 🚀 PARA INICIAR
 
@@ -319,16 +231,12 @@ npm run dev
 
 Acesse: `http://localhost:5173` → Faça login → Clique na aba **"Pedidos"**
 
----
 
 ## ✅ TUDO PRONTO!
 
 Agora você tem uma área administrativa completa com:
-- ✅ Login seguro
-- ✅ Visão geral com estatísticas
-- ✅ **Gerenciamento completo de pedidos (NOVO!)**
-- ✅ Gerenciamento de produtos
-- ✅ Personalização de layout e cores
-- ✅ Configurações do estabelecimento
 
 **🎊 Pedidos totalmente gerenciáveis com interface profissional! 🎊**
+Nota: documentação movida para `docs/admin/PEDIDOS-ADMIN.md`.
+
+Abra `docs/admin/README-ADMIN.md` para o índice dos documentos administrativos.

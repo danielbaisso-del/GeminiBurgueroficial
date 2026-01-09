@@ -1299,10 +1299,20 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                   <div className="aspect-video bg-gray-200 relative">
                     {product.image ? (
-                      <img 
-                        src={product.image.startsWith('http') ? product.image : `/uploads/${product.image}`} 
-                        alt={product.name} 
-                        className="w-full h-full object-cover" 
+                      <img
+                        src={
+                          product.image
+                            ? product.image.startsWith('http')
+                              ? product.image
+                              : product.image.startsWith('/')
+                                ? product.image
+                                : product.image.startsWith('uploads/')
+                                  ? `/${product.image}`
+                                  : getImagePath(product.image)
+                            : undefined
+                        }
+                        alt={product.name}
+                        className="w-full h-full object-contain p-4"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
