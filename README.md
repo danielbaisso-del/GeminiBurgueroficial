@@ -39,6 +39,12 @@ A full-stack application with AI-powered recommendations for restaurant ordering
    JWT_SECRET="your-secret-key"
    CORS_ORIGIN="http://localhost:5173"
    ```
+   
+   See `backend/.env.example` for all available options including:
+   - Email configuration
+   - WhatsApp API
+   - Payment gateways (MercadoPago, Stripe)
+   - Rate limiting settings
 
 5. Run Prisma migrations:
    ```bash
@@ -163,6 +169,13 @@ This will:
 - Verify `/api/*` routes are properly configured in `vercel.json`
 - Check serverless function logs in Vercel dashboard
 - Ensure backend dependencies are installed during build
+
+**File Uploads and Static Files:**
+- ⚠️ Vercel serverless functions have ephemeral filesystems
+- Uploaded files will not persist between function invocations
+- **Recommended**: Use cloud storage (AWS S3, Cloudinary, Vercel Blob) for file uploads
+- The `/uploads` route in `vercel.json` is for local development only
+- Update the backend to use cloud storage for production file uploads
 
 ## Development
 
