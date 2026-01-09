@@ -1,0 +1,57 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Development
+.env
+.env.local
+.env.*.local
+
+# Build outputs (will be built by Vercel)
+backend/dist
+frontend/dist
+dist-ssr
+
+# Database
+*.db
+*.db-journal
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in deployment)
+docs/
+*.md
+!README.md
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Tests
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+__tests__
+coverage
+
+# Git
+.git
+.gitignore
+.github
+
+# Misc
+uploads/
+.prettierrc
+.editorconfig
