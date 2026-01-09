@@ -174,8 +174,13 @@ This will:
 - ⚠️ Vercel serverless functions have ephemeral filesystems
 - Uploaded files will not persist between function invocations
 - **Recommended**: Use cloud storage (AWS S3, Cloudinary, Vercel Blob) for file uploads
-- The `/uploads` route in `vercel.json` is for local development only
 - Update the backend to use cloud storage for production file uploads
+
+**Build Order:**
+- The `vercel.json` ensures backend is built before the API wrapper
+- Build command: `npm run build --prefix backend && npm run build --prefix frontend`
+- API serverless function imports from compiled backend (`backend/dist/`)
+- This build order is crucial for successful deployment
 
 ## Development
 
