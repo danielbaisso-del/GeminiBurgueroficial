@@ -16,6 +16,7 @@ config();
  */
 function createApp() {
   const app = express();
+  const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
   // Middlewares
   app.use(cors({
@@ -23,13 +24,20 @@ function createApp() {
     credentials: true,
   }));
 
-  // Rate limiting geral
-  app.use('/api', generalLimiter);
+  // Rate limiting - apply globally in serverless, to /api in traditional server
+  if (isServerless) {
+    app.use(generalLimiter);
+  } else {
+    app.use('/api', generalLimiter);
+  }
 
   app.use(express.json());
 
-  // Servir arquivos estáticos da pasta uploads
-  app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+  // Servir arquivos estáticos da pasta uploads (only in non-serverless environments)
+  // In serverless/production, use external storage (S3, Cloudinary, etc.)
+  if (!isServerless) {
+    app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+  }
 
   // Routes
   app.use('/api', routes);
@@ -39,7 +47,8 @@ function createApp() {
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV 
+      environment: process.env.NODE_ENV,
+      serverless: isServerless 
     });
   });
 
