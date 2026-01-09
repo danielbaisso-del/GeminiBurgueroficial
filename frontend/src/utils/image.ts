@@ -3,7 +3,7 @@
  * Compatível com desenvolvimento e produção
  */
 export function getImagePath(imageName: string): string {
-  // Em desenvolvimento, BASE_URL é "/", em produção pode ser diferente
-  const baseUrl = import.meta.env.BASE_URL || '/';
-  return `${baseUrl}${imageName}`;
+  // Para imagens locais do frontend, sempre usar caminho direto
+  // O Vite serve arquivos da pasta public diretamente na raiz
+  return `/${imageName}`;
 }
