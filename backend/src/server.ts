@@ -3,7 +3,14 @@ import cors from 'cors';
 import path from 'path';
 import 'express-async-errors';
 import { config } from 'dotenv';
-import { routes } from './routes';
+import { autenticacaoRotas } from './routes/autenticacaoRotas';
+import { produtoRotas } from './routes/produtoRotas';
+import { pedidoRotas } from './routes/pedidoRotas';
+import { clienteRotas } from './routes/clienteRotas';
+import { categoriaRotas } from './routes/categoriaRotas';
+import { analiticasRotas } from './routes/analiticasRotas';
+import configuracaoRotas from './routes/configuracaoRotas';
+import { tenantRotas } from './routes/tenantRotas';
 import { tratadorErros } from './middlewares/tratadorErros';
 import { generalLimiter } from './middlewares/rateLimiter';
 
@@ -27,7 +34,14 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Routes
-app.use('/api', routes);
+app.use('/api/auth', autenticacaoRotas);
+app.use('/api/products', produtoRotas);
+app.use('/api/orders', pedidoRotas);
+app.use('/api/customers', clienteRotas);
+app.use('/api/categories', categoriaRotas);
+app.use('/api/analytics', analiticasRotas);
+app.use('/api/config', configuracaoRotas);
+app.use('/api/tenants', tenantRotas);
 
 // Health check
 app.get('/health', (req, res) => {
