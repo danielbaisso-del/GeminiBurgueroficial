@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Settings, Store, Palette, MapPin, Image, Save, LogOut, 
-  Package, ShoppingBag, Users, TrendingUp, Edit2, Trash2, 
-  Plus, X, Upload, Eye, Clock, CheckCircle, XCircle, FileText 
+  Settings, Store, Palette, MapPin, Save, LogOut, 
+  Package, ShoppingBag, TrendingUp, Edit2, Trash2, 
+  Plus, X, Upload, Eye, Clock, CheckCircle, FileText 
 } from 'lucide-react';
 import ProductModal from './ProductModal';
 import ReportsTab from './ReportsTab';
@@ -73,6 +73,22 @@ interface Order {
   };
 }
 
+interface TopProduct { id: string; name: string; quantity: number; revenue: number }
+interface TopCustomer { id: string; name: string; orderCount: number; phone?: string; totalSpent: number }
+interface OrdersByLocation { location: string; count: number; revenue: number }
+interface ReportOrderItem { productName: string; quantity: number; subtotal: number }
+interface ReportOrder { id: string; orderNumber: string; createdAt: string; customerName: string; phone?: string; items?: ReportOrderItem[]; total: number; paymentMethod: string; type: string; status: string; deliveryAddress?: { street?: string; number?: string; district?: string } }
+
+interface ReportData {
+  totalOrders: number;
+  totalRevenue: number;
+  avgOrderValue: number;
+  topProducts?: TopProduct[];
+  topCustomers?: TopCustomer[];
+  ordersByLocation?: OrdersByLocation[];
+  orders?: ReportOrder[];
+}
+
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'config' | 'reports'>('overview');
   const [config, setConfig] = useState<Config | null>(null);
@@ -81,7 +97,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderFilter, setOrderFilter] = useState<'all' | 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED'>('all');
-  const [isLoading, setIsLoading] = useState(false);
+  
   const [isSaving, setIsSaving] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -89,7 +105,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   
   // Reports
   const [reportPeriod, setReportPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
 
   // Stats
@@ -283,7 +299,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         }
       ];
       // Forçar atualização IMEDIATA dos produtos - sempre sobrescrever localStorage
-      console.log('📦 Atualizando produtos no localStorage...', mockProducts.length, 'produtos');
+      // Atualizando produtos no localStorage (modo demo)
       localStorage.setItem('demoProducts', JSON.stringify(mockProducts));
       localStorage.setItem('productsVersion', '3.0'); // Incrementar versão para forçar reload
       setProducts(mockProducts);
@@ -358,36 +374,90 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       ];
       
       // Carregar pedidos reais do localStorage
-      const savedOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
-      
+      const savedRaw = JSON.parse(localStorage.getItem('demoOrders') || '[]') as unknown;
+      const savedOrdersArr: Array<Record<string, unknown>> = Array.isArray(savedRaw) ? savedRaw as Array<Record<string, unknown>> : [];
+
+      // Converter para Order[] quando possível
+      const mappedSavedOrders: Order[] = savedOrdersArr.map((o) => {
+        const itemsRaw = Array.isArray(o.items) ? o.items as Array<Record<string, unknown>> : [];
+        const items = itemsRaw.map((it) => ({
+          id: String(it.id || ''),
+          productName: String(it.productName || it.name || ''),
+          quantity: Number(it.quantity || 0),
+          price: Number(it.price || 0),
+          subtotal: Number(it.subtotal || (it.price ? Number(it.price) * Number(it.quantity || 0) : 0)),
+        }));
+
+        const deliveryAddrRaw = o.deliveryAddress as Record<string, unknown> | undefined;
+
+        return {
+          id: String(o.id || ''),
+          orderNumber: String(o.orderNumber || ''),
+          customerName: String(o.customerName || ''),
+          phone: String(o.phone || ''),
+          total: Number(o.total || 0),
+          status: (String(o.status || 'PENDING') as Order['status']),
+          type: (String(o.type || 'PICKUP') as Order['type']),
+          paymentMethod: (String(o.paymentMethod || 'PIX') as Order['paymentMethod']),
+          createdAt: String(o.createdAt || new Date().toISOString()),
+          items,
+          deliveryAddress: deliveryAddrRaw ? {
+            street: String(deliveryAddrRaw.street || ''),
+            number: String(deliveryAddrRaw.number || ''),
+            district: String(deliveryAddrRaw.district || ''),
+            city: String(deliveryAddrRaw.city || ''),
+          } : undefined,
+        };
+      });
+
       // Se houver pedidos reais, usá-los; senão, usar mock
-      const ordersToUse = savedOrders.length > 0 ? savedOrders : mockOrders;
+      const ordersToUse = mappedSavedOrders.length > 0 ? mappedSavedOrders : mockOrders;
       setOrders(ordersToUse);
-      
+
       // Atualizar estatísticas com pedidos reais
-      if (savedOrders.length > 0) {
-        const totalRevenue = savedOrders.reduce((sum: number, order: any) => sum + order.total, 0);
-        const pendingCount = savedOrders.filter((order: any) => order.status === 'pending').length;
+      if (mappedSavedOrders.length > 0) {
+        const totalRevenue = mappedSavedOrders.reduce((sum: number, order: Order) => sum + order.total, 0);
+        const pendingCount = mappedSavedOrders.filter((order) => order.status === 'pending').length;
         setStats({
-          totalOrders: savedOrders.length,
+          totalOrders: mappedSavedOrders.length,
           totalRevenue,
           pendingOrders: pendingCount,
           totalProducts: mockProducts.length,
         });
       }
       
-      console.log('✅ Modo demonstração ativado - dados mockados carregados');
+      // Modo demonstração ativado - dados mockados carregados
       
       // Listener para atualizar pedidos em tempo real
       const orderUpdateInterval = setInterval(() => {
-        const currentOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
-        if (currentOrders.length > 0) {
-          setOrders(currentOrders);
-          const totalRevenue = currentOrders.reduce((sum: number, order: any) => sum + order.total, 0);
-          const pendingCount = currentOrders.filter((order: any) => order.status === 'pending').length;
+        const currentRaw = JSON.parse(localStorage.getItem('demoOrders') || '[]') as unknown;
+        const currentArr: Array<Record<string, unknown>> = Array.isArray(currentRaw) ? currentRaw as Array<Record<string, unknown>> : [];
+        if (currentArr.length > 0) {
+          const mapped = currentArr.map((o) => ({
+            id: String(o.id || ''),
+            orderNumber: String(o.orderNumber || ''),
+            customerName: String(o.customerName || ''),
+            phone: String(o.phone || ''),
+            total: Number(o.total || 0),
+            status: (String(o.status || 'PENDING') as Order['status']),
+            type: (String(o.type || 'PICKUP') as Order['type']),
+            paymentMethod: (String(o.paymentMethod || 'PIX') as Order['paymentMethod']),
+            createdAt: String(o.createdAt || new Date().toISOString()),
+            items: Array.isArray(o.items) ? (o.items as Array<Record<string, unknown>>).map(it => ({
+              id: String(it.id || ''),
+              productName: String(it.productName || it.name || ''),
+              quantity: Number(it.quantity || 0),
+              price: Number(it.price || 0),
+              subtotal: Number(it.subtotal || 0),
+            })) : []
+          } as Order));
+
+          setOrders(mapped);
+          const totalRevenue = mapped.reduce((sum: number, order: Order) => sum + order.total, 0);
+          const pendingCount = mapped.filter((order) => order.status === 'pending').length;
           setStats((prev) => ({
             ...prev,
-            totalOrders: currentOrders.length,
+            totalOrders: mapped.length,
             totalRevenue,
             pendingOrders: pendingCount,
           }));
@@ -463,7 +533,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setOrders(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar pedidos:', error);
+      // erro ao carregar pedidos
     }
   };
 
@@ -477,7 +547,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       });
 
       if (!response.ok) {
-        console.warn('⚠️ Não foi possível carregar configurações do servidor');
+        // Não foi possível carregar configurações do servidor
         return;
       }
       
@@ -486,7 +556,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setConfig(data);
       }
     } catch (error) {
-      console.warn('⚠️ Backend indisponível, usando modo demonstração');
+      // Backend indisponível, usando modo demonstração
     }
   };
 
@@ -504,7 +574,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setProducts(data);
       }
     } catch (error) {
-      console.warn('⚠️ Não foi possível carregar produtos');
+      // Não foi possível carregar produtos
     }
   };
 
@@ -522,7 +592,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setCategories(data);
       }
     } catch (error) {
-      console.warn('⚠️ Não foi possível carregar categorias');
+      // Não foi possível carregar categorias
     }
   };
 
@@ -545,7 +615,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         });
       }
     } catch (error) {
-      console.warn('⚠️ Não foi possível carregar estatísticas');
+      // Não foi possível carregar estatísticas
     }
   };
 
@@ -564,7 +634,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setReportData(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar relatório:', error);
+      // erro ao carregar relatório
     } finally {
       setLoadingReport(false);
     }
@@ -580,7 +650,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       // Modo demonstração - salvar no localStorage
       if (token?.includes('demo-token')) {
         localStorage.setItem('demoConfig', JSON.stringify(config));
-        console.log('✅ Configurações salvas no modo demo:', config);
+        // Configurações salvas no modo demo
         alert('Configurações salvas com sucesso!');
         setIsSaving(false);
         return;
@@ -600,7 +670,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         alert('Configurações salvas com sucesso!');
       }
     } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
+      // erro ao salvar configurações
       alert('Erro ao salvar configurações');
     } finally {
       setIsSaving(false);
@@ -628,7 +698,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         const updatedProducts = products.filter(p => p.id !== id);
         setProducts(updatedProducts);
         localStorage.setItem('demoProducts', JSON.stringify(updatedProducts));
-        console.log('✅ Produto excluído no modo demo');
+        // Produto excluído no modo demo
         alert('Produto excluído com sucesso!');
         return;
       }
@@ -645,7 +715,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         alert('Produto excluído com sucesso!');
       }
     } catch (error) {
-      console.error('Erro ao excluir produto:', error);
+      // erro ao excluir produto
       alert('Erro ao excluir produto');
     }
   };
@@ -661,7 +731,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         );
         setProducts(updatedProducts);
         localStorage.setItem('demoProducts', JSON.stringify(updatedProducts));
-        console.log('✅ Disponibilidade alterada no modo demo');
+        // Disponibilidade alterada no modo demo
         return;
       }
       
@@ -680,7 +750,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         ));
       }
     } catch (error) {
-      console.error('Erro ao atualizar produto:', error);
+      // erro ao atualizar produto
     }
   };
 
@@ -706,7 +776,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         loadStats();
       }
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      // erro ao atualizar status
       alert('Erro ao atualizar status do pedido');
     }
   };
@@ -1728,11 +1798,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               if (editingProduct) {
                 // Editar produto existente
                 updatedProducts = products.map(p => p.id === product.id ? product : p);
-                console.log('✅ Produto editado no modo demo:', product);
+                // Produto editado no modo demo
               } else {
                 // Adicionar novo produto
                 updatedProducts = [...products, product];
-                console.log('✅ Novo produto adicionado no modo demo:', product);
+                // Novo produto adicionado no modo demo
               }
               setProducts(updatedProducts);
               // Sincronizar com localStorage para o cliente ver as mudanças

@@ -38,9 +38,7 @@ export default function AppRouter() {
     }
   };
 
-  const handleBackToCustomer = () => {
-    setCurrentView('customer');
-  };
+  
 
   // Verificar URL para modo admin
   useEffect(() => {

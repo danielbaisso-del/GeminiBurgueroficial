@@ -14,7 +14,7 @@ export function tratadorErros(
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
   if (error instanceof ErroApp) {
     return res.status(error.statusCode).json({
@@ -29,7 +29,7 @@ export function tratadorErros(
     });
   }
 
-  console.error('Internal server error:', error);
+  process.stderr.write(`Internal server error: ${String(error)}\n`);
   
   return res.status(500).json({
     error: 'Internal server error',

@@ -28,11 +28,11 @@ const updateConfigSchema = z.object({
 export class ConfiguracaoController {
   async getConfig(req: Request, res: Response) {
     try {
-      console.log('🔧 getConfig chamado');
-      console.log('📝 req.user:', req.user);
-      
+      process.stdout.write('🔧 getConfig chamado\n');
+      process.stdout.write(`📝 req.user: ${JSON.stringify(req.user)}\n`);
+
       const tenantId = req.user!.tenantId;
-      console.log('🆔 tenantId:', tenantId);
+      process.stdout.write(`🆔 tenantId: ${tenantId}\n`);
 
       const tenant = await prisma.tenant.findUnique({
         where: { id: tenantId },
@@ -66,15 +66,15 @@ export class ConfiguracaoController {
       });
 
       if (!tenant) {
-        console.log('❌ Tenant não encontrado');
+        process.stderr.write('❌ Tenant não encontrado\n');
         return res.status(404).json({ error: 'Tenant not found' });
       }
 
-      console.log('✅ Tenant encontrado:', tenant.businessName);
-      res.json(tenant);
+        process.stdout.write(`✅ Tenant encontrado: ${tenant.businessName}\n`);
+        res.json(tenant);
     } catch (error) {
-      console.error('❌ Erro no getConfig:', error);
-      res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
+        process.stderr.write(`❌ Erro no getConfig: ${String(error)}\n`);
+        res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
@@ -134,7 +134,7 @@ export class ConfiguracaoController {
     // URL da imagem (em produção, usar CDN ou storage service)
     const imageUrl = `/uploads/${file.filename}`;
 
-    const updateData: any = {};
+    const updateData: { logo?: string; banner?: string } = {};
     if (type === 'logo') {
       updateData.logo = imageUrl;
     } else if (type === 'banner') {

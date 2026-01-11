@@ -120,7 +120,7 @@ export class AnaliticasController {
     const tenantId = req.user!.tenantId;
     const { period, startDate, endDate } = req.query;
 
-    let dateFilter: any = {};
+    let dateFilter: Record<string, unknown> = {};
     const now = new Date();
 
     if (period === 'daily') {
@@ -236,7 +236,8 @@ export class AnaliticasController {
     );
 
     // Pedidos por localização (bairro)
-    const ordersByLocation = orders.reduce((acc: any, order) => {
+    type LocationStat = { location: string; count: number; revenue: number };
+    const ordersByLocation = orders.reduce((acc: Record<string, LocationStat>, order) => {
       // Extrai o bairro do endereço de entrega, se existir
       let location = 'Não informado';
       if (order.deliveryAddress && typeof order.deliveryAddress === 'object' && !Array.isArray(order.deliveryAddress)) {
@@ -255,10 +256,10 @@ export class AnaliticasController {
       acc[location].count += 1;
       acc[location].revenue += Number(order.total);
       return acc;
-    }, {});
+    }, {} as Record<string, LocationStat>);
 
     const locationStats = Object.values(ordersByLocation).sort(
-      (a: any, b: any) => b.count - a.count
+      (a: LocationStat, b: LocationStat) => b.count - a.count
     );
 
     // Estatísticas gerais

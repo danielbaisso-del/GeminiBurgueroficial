@@ -18,11 +18,11 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
     setIsLoading(true);
 
     try {
-      console.log('🔐 Tentando fazer login...', { email });
+      // Tentando fazer login
       
       // Login de demonstração temporário (sem backend)
       if (email === 'admin@demo.com' && password === 'demo123') {
-        console.log('✅ Login de demonstração aceito');
+        // Login de demonstração aceito
         const mockData = {
           token: 'demo-token-' + Date.now(),
           user: { id: '1', name: 'Admin Demo', email: 'admin@demo.com', role: 'OWNER' }
@@ -31,8 +31,8 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
         localStorage.setItem('adminToken', mockData.token);
         localStorage.setItem('adminUser', JSON.stringify(mockData.user));
         
-        console.log('💾 Dados salvos no localStorage');
-        console.log('🚀 Chamando onLoginSuccess...');
+        // Dados salvos no localStorage
+        // Chamando onLoginSuccess
         onLoginSuccess();
         return;
       }
@@ -45,26 +45,26 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('📡 Resposta recebida:', response.status, response.statusText);
+      // resposta recebida do servidor
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Erro na resposta:', errorData);
+        // erro na resposta do servidor
         throw new Error(errorData.message || 'Credenciais inválidas');
       }
 
       const data = await response.json();
-      console.log('✅ Login bem-sucedido:', data);
+      // Login bem-sucedido
       
       // Salvar token no localStorage
       localStorage.setItem('adminToken', data.token);
       localStorage.setItem('adminUser', JSON.stringify(data.user));
       
-      console.log('💾 Dados salvos no localStorage');
-      console.log('🚀 Chamando onLoginSuccess...');
+      // Dados salvos no localStorage
+      // Chamando onLoginSuccess
       onLoginSuccess();
     } catch (err) {
-      console.error('❌ Erro no login:', err);
+      // erro no login
       setError(err instanceof Error ? err.message : 'Erro ao fazer login');
     } finally {
       setIsLoading(false);
@@ -139,24 +139,13 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
                 Entrando...
               </>
             ) : (
-              <>
-                <LogIn className="w-5 h-5" />
-                Entrar
-              </>
+              'Entrar'
             )}
           </button>
-        </form>
-
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm font-semibold text-blue-900 mb-2">🔑 Credenciais de Demonstração:</p>
-          <div className="text-sm text-blue-800 space-y-1">
-            <p><strong>E-mail:</strong> admin@demo.com</p>
-            <p><strong>Senha:</strong> demo123</p>
-          </div>
           <p className="text-xs text-blue-600 mt-2">
             ℹ️ Use estas credenciais para acessar o painel sem banco de dados configurado.
           </p>
-        </div>
+        </form>
 
         <div className="mt-4 text-center text-sm text-gray-600">
           <p>Esqueceu sua senha?</p>

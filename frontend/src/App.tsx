@@ -26,11 +26,20 @@ export default function App() {
   const [needsChange, setNeedsChange] = useState(false);
   
   // Carregar configurações do admin
-  const [appConfig, setAppConfig] = useState<any>(() => {
+  interface AppConfig {
+    businessName?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    [key: string]: unknown;
+  }
+
+  const [appConfig, setAppConfig] = useState<AppConfig | null>(() => {
     const demoConfig = localStorage.getItem('demoConfig');
     if (demoConfig) {
       try {
-        return JSON.parse(demoConfig);
+        const parsed = JSON.parse(demoConfig) as unknown;
+        if (typeof parsed === 'object' && parsed !== null) return parsed as AppConfig;
+        return null;
       } catch (e) {
         return null;
       }
@@ -47,7 +56,7 @@ export default function App() {
           const parsedConfig = JSON.parse(demoConfig);
           setAppConfig(parsedConfig);
         } catch (e) {
-          console.error('Erro ao carregar configurações:', e);
+          // erro ao carregar configurações do localStorage
         }
       }
     };
@@ -80,24 +89,27 @@ export default function App() {
     const demoProducts = localStorage.getItem('demoProducts');
     if (demoProducts) {
       try {
-        const parsedProducts = JSON.parse(demoProducts);
-        console.log('✅ Produtos carregados do localStorage:', parsedProducts.length);
-        // Converter formato do admin para formato do cliente
-        return parsedProducts.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          price: p.price,
-          category: getCategorySlugById(p.categoryId),
-          image: p.image,
-          tags: []
-        }));
+        const parsedProducts = JSON.parse(demoProducts) as unknown;
+        if (Array.isArray(parsedProducts)) {
+          return parsedProducts.map((p) => {
+            const obj = p as Record<string, unknown>;
+            return {
+              id: String(obj.id || ''),
+              name: String(obj.name || ''),
+              description: String(obj.description || ''),
+              price: Number(obj.price) || 0,
+              category: getCategorySlugById(String(obj.categoryId || '1')),
+              image: String(obj.image || ''),
+              tags: []
+            } as Product;
+          });
+        }
       } catch (e) {
-        console.error('❌ Erro ao carregar produtos:', e);
-        return MENU_ITEMS;
+        // erro ao parsear produtos demo
       }
     }
-    console.log('⚠️ Nenhum produto no localStorage, usando MENU_ITEMS');
+
+    // Nenhum produto no localStorage, usando MENU_ITEMS
     return MENU_ITEMS;
   });
   
@@ -107,20 +119,25 @@ export default function App() {
       const demoProducts = localStorage.getItem('demoProducts');
       if (demoProducts) {
         try {
-          const parsedProducts = JSON.parse(demoProducts);
-          const converted = parsedProducts.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            description: p.description,
-            price: p.price,
-            category: getCategorySlugById(p.categoryId),
-            image: p.image,
-            tags: []
-          }));
-          setMenuItems(converted);
-        } catch (e) {
-          console.error('Erro ao carregar produtos:', e);
-        }
+          const parsedProducts = JSON.parse(demoProducts) as unknown;
+          if (Array.isArray(parsedProducts)) {
+            const converted = parsedProducts.map((p) => {
+              const obj = p as Record<string, unknown>;
+              return {
+                id: String(obj.id || ''),
+                name: String(obj.name || ''),
+                description: String(obj.description || ''),
+                price: Number(obj.price) || 0,
+                category: getCategorySlugById(String(obj.categoryId || '1')),
+                image: String(obj.image || ''),
+                tags: []
+              } as Product;
+            });
+            setMenuItems(converted);
+          }
+          } catch (e) {
+            // erro ao carregar produtos demo
+          }
       }
     };
     
@@ -251,7 +268,7 @@ export default function App() {
           }));
         }
       } catch (e) {
-        console.error("CEP fetch error", e);
+        // CEP fetch error
       } finally {
         setIsCepLoading(false);
       }
@@ -269,8 +286,8 @@ export default function App() {
         }));
         setIsGeoLoading(false);
       },
-      (err) => {
-        console.error(err);
+      (_err) => {
+        // geolocation error
         setIsGeoLoading(false);
         alert("Não foi possível obter sua localização. Verifique as permissões.");
       }

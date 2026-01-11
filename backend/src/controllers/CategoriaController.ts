@@ -50,7 +50,7 @@ export class CategoriaController {
   }
 
   async listPublic(req: Request, res: Response) {
-    const tenant = req.tenant;
+    const tenant = req.tenant!;
 
     const categories = await prisma.category.findMany({
       where: {

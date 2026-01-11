@@ -66,7 +66,7 @@ export class ProdutoController {
   }
 
   async listPublic(req: Request, res: Response) {
-    const tenant = req.tenant;
+    const tenant = req.tenant!;
 
     const products = await prisma.product.findMany({
       where: {
@@ -107,7 +107,7 @@ export class ProdutoController {
 
   async getBySlug(req: Request, res: Response) {
     const { slug } = req.params;
-    const tenant = req.tenant;
+    const tenant = req.tenant!;
 
     const product = await prisma.product.findFirst({
       where: {

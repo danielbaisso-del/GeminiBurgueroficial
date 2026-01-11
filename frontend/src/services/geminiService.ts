@@ -1,10 +1,5 @@
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { MENU_ITEMS } from "../constants";
-
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-console.log('API Key loaded:', apiKey ? 'Yes' : 'No');
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+// VITE_GEMINI_API_KEY may be used by future AI integration
 
 export const getAIRecommendation = async (userPreference: string): Promise<string> => {
   // Recomendações baseadas em palavras-chave enquanto a IA não funciona

@@ -1,10 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { TrendingUp, Users, MapPin, Package, DollarSign, Calendar, FileText } from 'lucide-react';
+import React from 'react';
+import { TrendingUp, Users, MapPin, Package, DollarSign, FileText } from 'lucide-react';
+
+interface TopProduct { id: string; name: string; quantity: number; revenue: number }
+interface TopCustomer { id: string; name: string; orderCount: number; phone?: string; totalSpent: number }
+interface OrdersByLocation { location: string; count: number; revenue: number }
+interface ReportOrderItem { productName: string; quantity: number; subtotal: number }
+interface ReportOrder { id: string; orderNumber: string; createdAt: string; customerName: string; phone?: string; items?: ReportOrderItem[]; total: number; paymentMethod: string; type: string; status: string; deliveryAddress?: { street?: string; number?: string; district?: string } }
+
+interface ReportData {
+  totalOrders: number;
+  totalRevenue: number;
+  avgOrderValue: number;
+  topProducts?: TopProduct[];
+  topCustomers?: TopCustomer[];
+  ordersByLocation?: OrdersByLocation[];
+  orders?: ReportOrder[];
+}
 
 interface ReportsTabProps {
   period: 'daily' | 'weekly' | 'monthly';
   onPeriodChange: (period: 'daily' | 'weekly' | 'monthly') => void;
-  reportData: any;
+  reportData?: ReportData | null;
   loading: boolean;
 }
 
@@ -118,7 +134,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
             Produtos Mais Pedidos
           </h3>
           <div className="space-y-3">
-            {reportData.topProducts?.slice(0, 10).map((product: any, index: number) => (
+            {reportData.topProducts?.slice(0, 10).map((product: TopProduct, index: number) => (
               <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-600 rounded-full font-bold text-sm">
@@ -145,7 +161,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
             Clientes que Mais Pediram
           </h3>
           <div className="space-y-3">
-            {reportData.topCustomers?.slice(0, 10).map((customer: any, index: number) => (
+            {reportData.topCustomers?.slice(0, 10).map((customer: TopCustomer, index: number) => (
               <div key={customer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full font-bold text-sm">
@@ -175,7 +191,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
           Pedidos por Localização
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {reportData.ordersByLocation?.slice(0, 12).map((loc: any, index: number) => (
+          {reportData.ordersByLocation?.slice(0, 12).map((loc: OrdersByLocation, index: number) => (
             <div key={index} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
               <div className="flex items-start justify-between mb-2">
                 <p className="font-medium text-gray-900">{loc.location}</p>
@@ -220,7 +236,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
               </tr>
             </thead>
             <tbody>
-              {reportData.orders?.map((order: any) => (
+              {reportData.orders?.map((order: ReportOrder) => (
                 <React.Fragment key={order.id}>
                   <tr className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-3 px-4 font-medium text-gray-900">{order.orderNumber}</td>
@@ -234,7 +250,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
                     <td className="py-3 px-4 text-gray-900 text-sm">{order.phone}</td>
                     <td className="py-3 px-4">
                       <div className="text-sm text-gray-900">
-                        {order.items?.map((item: any, idx: number) => (
+                        {order.items?.map((item: ReportOrderItem, idx: number) => (
                           <div key={idx} className="mb-1">
                             <span className="font-medium">{item.quantity}x</span> {item.productName}
                             <span className="text-gray-700 ml-2">R$ {item.subtotal.toFixed(2)}</span>

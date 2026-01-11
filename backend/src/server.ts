@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
+import helmet from 'helmet';
 import 'express-async-errors';
 import { config } from 'dotenv';
 import { autenticacaoRotas } from './routes/autenticacaoRotas';
@@ -11,13 +13,14 @@ import { categoriaRotas } from './routes/categoriaRotas';
 import { analiticasRotas } from './routes/analiticasRotas';
 import configuracaoRotas from './routes/configuracaoRotas';
 import { tenantRotas } from './routes/tenantRotas';
+import { pagamentoRotas } from './routes/pagamentoRotas';
 import { tratadorErros } from './middlewares/tratadorErros';
 import { generalLimiter } from './middlewares/rateLimiter';
 
 config();
 
 const app = express();
-const PORT = process.env.PORT || 3333;
+const PORT = Number(process.env.PORT || 3333);
 
 // Middlewares
 app.use(cors({
@@ -33,6 +36,21 @@ app.use(express.json());
 // Servir arquivos estáticos da pasta uploads
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// Security headers
+app.use(helmet());
+
+// Serve frontend build if present (prefer backend/public, fallback to frontend/dist)
+const backendPublic = path.join(__dirname, '..', 'public');
+const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
+
+if (fs.existsSync(backendPublic)) {
+  app.use(express.static(backendPublic));
+}
+
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+}
+
 // Routes
 app.use('/api/auth', autenticacaoRotas);
 app.use('/api/products', produtoRotas);
@@ -42,6 +60,7 @@ app.use('/api/categories', categoriaRotas);
 app.use('/api/analytics', analiticasRotas);
 app.use('/api/config', configuracaoRotas);
 app.use('/api/tenants', tenantRotas);
+app.use('/api/payments', pagamentoRotas);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -52,20 +71,47 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Error handler
-app.use(tratadorErros);
+// Serve index explicitly at root (prefer backend/public)
+app.get('/', (req, res) => {
+  const indexFromBackend = path.join(backendPublic, 'index.html');
+  const indexFromFrontend = path.join(frontendDist, 'index.html');
 
+  if (fs.existsSync(indexFromBackend)) return res.sendFile(indexFromBackend);
+  if (fs.existsSync(indexFromFrontend)) return res.sendFile(indexFromFrontend);
+
+  return res.status(404).send('Not Found');
+});
+
+// SPA fallback for non-API routes
+app.get(/^\/(?!api).*/, (req, res) => {
+  const indexFromBackend = path.join(backendPublic, 'index.html');
+  const indexFromFrontend = path.join(frontendDist, 'index.html');
+
+  if (fs.existsSync(indexFromBackend)) return res.sendFile(indexFromBackend);
+  if (fs.existsSync(indexFromFrontend)) return res.sendFile(indexFromFrontend);
+
+  return res.status(404).send('Not Found');
+});
+
+// Error handler (placed last)
+app.use(tratadorErros);
 if (require.main === module) {
-  const server = app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    process.stdout.write(`🚀 Server running on http://localhost:${PORT}\n`);
+    process.stdout.write(`📊 Environment: ${process.env.NODE_ENV}\n`);
   });
 
-  server.on('error', (error: any) => {
-    console.error('❌ Server error:', error);
-    if (error.code === 'EADDRINUSE') {
-      console.error(`Port ${PORT} is already in use`);
+  server.on('error', (error: unknown) => {
+    process.stderr.write(`❌ Server error: ${String(error)}\n`);
+
+    function isErrnoException(e: unknown): e is NodeJS.ErrnoException {
+      return typeof e === 'object' && e !== null && 'code' in e;
     }
+
+    if (isErrnoException(error) && error.code === 'EADDRINUSE') {
+      process.stderr.write(`Port ${PORT} is already in use\n`);
+    }
+
     process.exit(1);
   });
 }

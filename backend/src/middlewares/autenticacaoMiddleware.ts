@@ -32,14 +32,12 @@ export function autenticacaoMiddleware(req: Request, res: Response, next: NextFu
   }
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        tenantId: string;
-        role: string;
-      };
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: {
+      id: string;
+      tenantId: string;
+      role: string;
+    };
   }
 }

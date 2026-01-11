@@ -41,7 +41,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
   const [imagePreview, setImagePreview] = useState<string | undefined>();
 
   useEffect(() => {
-    console.log('ProductModal montado:', { isOpen, product, categories });
+    // ProductModal mounted
     if (product) {
       setFormData(product);
       setImagePreview(product.image);
@@ -57,7 +57,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
       });
       setImagePreview(undefined);
     }
-  }, [product, isOpen, categories]);
+    }, [product, isOpen, categories]); // ProductModal mounted
 
   const handleImageUpload = (file: File) => {
     const reader = new FileReader();
@@ -78,7 +78,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
       
       // Modo demonstração - simular salvamento
       if (token?.includes('demo-token')) {
-        console.log('💾 Modo demo - simulando salvamento:', formData);
+          // simulando salvamento em modo demo
         await new Promise(resolve => setTimeout(resolve, 500)); // Simular delay de rede
         
         const savedProduct = {
@@ -113,7 +113,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         alert('Erro ao salvar produto');
       }
     } catch (error) {
-      console.error('Erro ao salvar produto:', error);
+        // erro ao salvar produto
       alert('Erro ao salvar produto');
     } finally {
       setIsLoading(false);

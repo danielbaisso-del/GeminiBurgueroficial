@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { ErroApp } from './tratadorErros';
+import { Tenant } from '@prisma/client';
 
 /**
  * Middleware para identificar o tenant baseado no subdomínio ou header
@@ -47,10 +48,8 @@ function extractSlugFromHost(hostname: string): string {
   return '';
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      tenant?: any;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    tenant?: Tenant;
   }
 }

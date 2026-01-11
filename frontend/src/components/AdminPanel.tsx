@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, ShoppingBag, Users, TrendingUp, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Package, ShoppingBag, TrendingUp, Clock, CheckCircle, Loader2 } from 'lucide-react';
 
 interface Order {
   id: string;

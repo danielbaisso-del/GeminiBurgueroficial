@@ -33,7 +33,7 @@ const createOrderSchema = z.object({
 export class PedidoController {
   async create(req: Request, res: Response) {
     const data = createOrderSchema.parse(req.body);
-    const tenant = req.tenant;
+    const tenant = req.tenant!;
 
     // Validar produtos
     const products = await prisma.product.findMany({
@@ -133,20 +133,18 @@ export class PedidoController {
   }
 
   async list(req: Request, res: Response) {
-    const tenantId = req.tenant.id;
+    const tenantId = req.tenant!.id;
     const { status, startDate, endDate } = req.query;
 
+    const where: any = { tenantId };
+    if (status) where.status = status as any;
+    if (startDate && endDate) where.createdAt = {
+      gte: new Date(String(startDate)),
+      lte: new Date(String(endDate)),
+    };
+
     const orders = await prisma.order.findMany({
-      where: {
-        tenantId,
-        ...(status && { status: String(status) as any }),
-        ...(startDate && endDate && {
-          createdAt: {
-            gte: new Date(String(startDate)),
-            lte: new Date(String(endDate)),
-          },
-        }),
-      },
+      where,
       include: {
         customer: true,
         items: {
@@ -165,7 +163,7 @@ export class PedidoController {
 
   async getById(req: Request, res: Response) {
     const { id } = req.params;
-    const tenantId = req.tenant.id;
+    const tenantId = req.tenant!.id;
 
     const order = await prisma.order.findFirst({
       where: {
@@ -194,7 +192,7 @@ export class PedidoController {
     const { status } = z.object({
       status: z.enum(['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED']),
     }).parse(req.body);
-    const tenantId = req.tenant.id;
+    const tenantId = req.tenant!.id;
 
     const order = await prisma.order.findFirst({
       where: { id, tenantId },
@@ -227,7 +225,7 @@ export class PedidoController {
 
   async cancel(req: Request, res: Response) {
     const { id } = req.params;
-    const tenantId = req.tenant.id;
+    const tenantId = req.tenant!.id;
 
     const order = await prisma.order.findFirst({
       where: { id, tenantId },
