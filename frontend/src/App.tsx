@@ -492,7 +492,7 @@ Aguardando confirmação!`.trim();
 
       {/* Cart Sidebar */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => setIsCartOpen(false)} />
           <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-zinc-950 shadow-2xl flex flex-col border-l border-zinc-800 animate-in slide-in-from-right duration-300">
             <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
