@@ -1,0 +1,5 @@
+  embed-frontend-into-backend     [m 66d274d [[34morigin/embed-frontend-into-backend[m] CI: add auto-merge workflow to merge PRs after CI success
+  feature/vercel-deploy           [m 54670e3 [[34morigin/feature/vercel-deploy[m] Add serverless-http and make API function wrap backend app; run build
+  main                            [m 66d274d [[34morigin/main[m] CI: add auto-merge workflow to merge PRs after CI success
+  pr-7                            [m 66d274d CI: add auto-merge workflow to merge PRs after CI success
+* [32mwip/stash-restore-20260112120123[m 2bcb454 [[34morigin/wip/stash-restore-20260112120123[m] Fix: evitar corte do carrinho em mobile (remover overflow-hidden) + add debug helpers

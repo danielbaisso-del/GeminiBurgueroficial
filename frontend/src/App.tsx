@@ -62,14 +62,20 @@ export default function App() {
     };
     
     window.addEventListener('storage', handleConfigChange);
-    
+    window.addEventListener('demoConfigChanged', handleConfigChange as EventListener);
+
+    // Fallback: polling periódico para garantir atualização no mesmo contexto
+    const interval = window.setInterval(handleConfigChange, 2000);
+
     return () => {
       window.removeEventListener('storage', handleConfigChange);
+      window.removeEventListener('demoConfigChanged', handleConfigChange as EventListener);
+      window.clearInterval(interval);
     };
   }, []);
   
-  // Cor do texto para os inputs (sempre branca para garantir visibilidade)
-  const inputTextColor = '#ffffff';
+  // Cor do texto para os inputs (padrão vindo da config do admin ou branca)
+  const inputTextColor = appConfig?.textColor || '#ffffff';
   
   // Helper para converter categoryId em slug (definido ANTES de ser usado)
   const getCategorySlugById = (categoryId: string) => {
@@ -392,7 +398,14 @@ Aguardando confirmação!`.trim();
   ];
 
   return (
-    <div className="min-h-screen pb-20 bg-zinc-950">
+    <div
+      className="min-h-screen pb-20"
+      style={{
+        backgroundColor: appConfig?.bgColor || '#0f1724',
+        color: appConfig?.textColor || undefined,
+        ['--input-text-color' as any]: appConfig?.textColor || '#ffffff'
+      } as React.CSSProperties}
+    >
       <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -432,7 +445,6 @@ Aguardando confirmação!`.trim();
               type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)}
               placeholder="Peça uma recomendação: 'Quero um combo com IPA'..."
               className="flex-1 bg-transparent px-4 py-2 outline-none placeholder:text-zinc-600"
-              style={{ color: `${inputTextColor} !important` }}
             />
             <button 
               type="submit" 
@@ -574,7 +586,7 @@ Aguardando confirmação!`.trim();
           <div className="min-h-screen px-4 flex items-center justify-center py-10">
             <div className="fixed inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={() => setShowCheckout(false)} />
             <div className="relative w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
-              <div className="p-8 md:p-12 overflow-y-auto max-h-[90vh] no-scrollbar">
+              <div className="p-8 md:p-12 overflow-y-auto max-h-[90vh]">
                 <div className="flex justify-between items-center mb-10">
                   <h3 className="text-4xl font-heading text-white">Detalhes do Pedido</h3>
                   <button onClick={() => setShowCheckout(false)} className="p-2 text-zinc-500 hover:text-white bg-zinc-900 rounded-full transition-colors"><X size={28} /></button>
@@ -757,15 +769,13 @@ Aguardando confirmação!`.trim();
                       value={orderDetails.cardName || ''}
                       onChange={(e) => setOrderDetails(prev => ({ ...prev, cardName: e.target.value }))}
                       className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
-                      style={{ color: `${inputTextColor} !important` }}
                     />
                     <input
                       type="text"
                       placeholder="Número do cartão"
                       value={orderDetails.cardNumber || ''}
                       onChange={(e) => setOrderDetails(prev => ({ ...prev, cardNumber: e.target.value }))}
-                      className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
-                      style={{ color: `${inputTextColor} !important` }}
+                        className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
                     />
                     <div className="flex gap-4">
                       <input
@@ -774,7 +784,6 @@ Aguardando confirmação!`.trim();
                         value={orderDetails.cardExpiry || ''}
                         onChange={(e) => setOrderDetails(prev => ({ ...prev, cardExpiry: e.target.value }))}
                         className="flex-1 p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
-                        style={{ color: `${inputTextColor} !important` }}
                       />
                       <input
                         type="text"
@@ -782,7 +791,6 @@ Aguardando confirmação!`.trim();
                         value={orderDetails.cardCvv || ''}
                         onChange={(e) => setOrderDetails(prev => ({ ...prev, cardCvv: e.target.value }))}
                         className="flex-1 p-4 bg-zinc-800 border border-zinc-700 rounded-xl placeholder-zinc-500"
-                        style={{ color: `${inputTextColor} !important` }}
                       />
                     </div>
                   </div>

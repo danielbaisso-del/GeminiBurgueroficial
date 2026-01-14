@@ -134,7 +134,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 border-b border-gray-200 px-6 py-4 flex items-center justify-between" style={{ backgroundColor: '#ffffff' }}>
+        <div className="sticky top-0 border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between" style={{ backgroundColor: '#ffffff' }}>
           <h2 className="text-2xl font-bold text-gray-900">
             {product ? 'Editar Produto' : 'Novo Produto'}
           </h2>
@@ -147,7 +147,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2" style={{ color: '#111827', fontWeight: '600' }}>
@@ -159,7 +159,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                    className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg border-2 border-gray-200"
                   />
                   <button
                     type="button"

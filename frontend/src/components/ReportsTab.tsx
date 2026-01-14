@@ -56,12 +56,12 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Relatórios Detalhados</h2>
           <p className="text-gray-600 mt-1">Análise completa de pedidos e vendas</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-2 px-2">
           <button
             onClick={() => onPeriodChange('daily')}
             className={`px-4 py-2 rounded-lg font-medium transition ${
@@ -97,7 +97,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Total Pedidos</h3>
             <FileText className="w-8 h-8 opacity-80" />
@@ -106,7 +106,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
           <p className="text-orange-100 text-sm mt-2">{periodLabels[period]}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Faturamento</h3>
             <DollarSign className="w-8 h-8 opacity-80" />
@@ -115,7 +115,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
           <p className="text-green-100 text-sm mt-2">{periodLabels[period]}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Ticket Médio</h3>
             <TrendingUp className="w-8 h-8 opacity-80" />
@@ -128,7 +128,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
       {/* Two Columns Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Package className="w-5 h-5 text-orange-600" />
             Produtos Mais Pedidos
@@ -155,7 +155,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
         </div>
 
         {/* Top Customers */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Users className="w-5 h-5 text-orange-600" />
             Clientes que Mais Pediram
@@ -185,7 +185,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
       </div>
 
       {/* Orders by Location */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <MapPin className="w-5 h-5 text-orange-600" />
           Pedidos por Localização
@@ -220,7 +220,7 @@ export default function ReportsTab({ period, onPeriodChange, reportData, loading
           <FileText className="w-5 h-5 text-orange-600" />
           Todos os Pedidos - Detalhado
         </h3>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto no-scrollbar">
           <table className="w-full">
             <thead>
               <tr className="border-b-2 border-gray-300 bg-gray-50">

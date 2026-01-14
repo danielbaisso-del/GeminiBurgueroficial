@@ -650,7 +650,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       // Modo demonstração - salvar no localStorage
       if (token?.includes('demo-token')) {
         localStorage.setItem('demoConfig', JSON.stringify(config));
-        // Configurações salvas no modo demo
+        try { window.dispatchEvent(new Event('storage')); } catch {}
+        try { window.dispatchEvent(new CustomEvent('demoConfigChanged', { detail: config })); } catch {}
         alert('Configurações salvas com sucesso!');
         setIsSaving(false);
         return;
@@ -666,12 +667,21 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       });
       
       if (response.ok) {
+        // Persist server-side and also update local demo copy so client reflects changes immediately
         localStorage.setItem('demoConfig', JSON.stringify(config));
+        try { window.dispatchEvent(new Event('storage')); } catch {}
+        try { window.dispatchEvent(new CustomEvent('demoConfigChanged', { detail: config })); } catch {}
         alert('Configurações salvas com sucesso!');
       }
     } catch (error) {
       // erro ao salvar configurações
-      alert('Erro ao salvar configurações');
+      // Mesmo em caso de erro, persistimos localmente para desenvolver/testar a UI sem backend
+      try {
+        localStorage.setItem('demoConfig', JSON.stringify(config));
+        try { window.dispatchEvent(new Event('storage')); } catch {}
+        try { window.dispatchEvent(new CustomEvent('demoConfigChanged', { detail: config })); } catch {}
+      } catch {}
+      alert('Erro ao salvar configurações no servidor — salvo localmente.');
     } finally {
       setIsSaving(false);
     }
@@ -825,7 +835,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
                 <Store className="w-6 h-6 text-white" />
@@ -849,10 +859,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-8">
+          <div className="flex gap-6 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`py-4 px-2 border-b-2 font-medium transition ${
+              className={`py-4 px-2 border-b-2 font-medium transition whitespace-nowrap ${
                 activeTab === 'overview'
                   ? 'border-orange-600 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -865,7 +875,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </button>
             <button
               onClick={() => setActiveTab('orders')}
-              className={`py-4 px-2 border-b-2 font-medium transition ${
+              className={`py-4 px-2 border-b-2 font-medium transition whitespace-nowrap ${
                 activeTab === 'orders'
                   ? 'border-orange-600 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -878,7 +888,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </button>
             <button
               onClick={() => setActiveTab('products')}
-              className={`py-4 px-2 border-b-2 font-medium transition ${
+              className={`py-4 px-2 border-b-2 font-medium transition whitespace-nowrap ${
                 activeTab === 'products'
                   ? 'border-orange-600 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -891,7 +901,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </button>
             <button
               onClick={() => setActiveTab('config')}
-              className={`py-4 px-2 border-b-2 font-medium transition ${
+              className={`py-4 px-2 border-b-2 font-medium transition whitespace-nowrap ${
                 activeTab === 'config'
                   ? 'border-orange-600 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -904,7 +914,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </button>
             <button
               onClick={() => setActiveTab('reports')}
-              className={`py-4 px-2 border-b-2 font-medium transition ${
+              className={`py-4 px-2 border-b-2 font-medium transition whitespace-nowrap ${
                 activeTab === 'reports'
                   ? 'border-orange-600 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -1212,139 +1222,45 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </div>
 
             {/* Lista de Pedidos */}
-            {filteredOrders.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum pedido encontrado</h3>
-                <p className="text-gray-600">
-                  {orderFilter === 'all' 
-                    ? 'Ainda não há pedidos no sistema.' 
-                    : `Não há pedidos com status "${getStatusLabel(orderFilter as Order['status'])}".`}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {filteredOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer"
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setShowOrderDetails(true);
-                    }}
-                  >
-                    <div className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        {/* Informações do Pedido */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-lg font-bold text-gray-900">#{order.orderNumber}</span>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
-                              {getStatusLabel(order.status)}
-                            </span>
-                            <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
-                              {order.type === 'DELIVERY' ? '🚚 Delivery' : '🏪 Retirada'}
-                            </span>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              {filteredOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">Nenhum pedido encontrado</div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition cursor-pointer"
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setShowOrderDetails(true);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            order.status === 'PENDING' ? 'bg-yellow-100' :
+                            order.status === 'DELIVERED' ? 'bg-green-100' : 'bg-blue-100'
+                          }`}>
+                            {order.status === 'PENDING' ? <Clock className="w-5 h-5 text-yellow-600" /> :
+                             order.status === 'DELIVERED' ? <CheckCircle className="w-5 h-5 text-green-600" /> :
+                             <ShoppingBag className="w-5 h-5 text-blue-600" />}
                           </div>
-                          <p className="text-sm text-gray-600 mb-1">
-                            <span className="font-medium">Cliente:</span> {order.customerName}
-                          </p>
-                          <p className="text-sm text-gray-600 mb-1">
-                            <span className="font-medium">Telefone:</span> {order.phone}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Itens:</span> {order.items.length} produto(s)
-                          </p>
-                        </div>
-
-                        {/* Valor e Data */}
-                        <div className="flex md:flex-col items-end gap-2 md:gap-1">
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-orange-600">
-                              R$ {Number(order.total).toFixed(2)}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(order.createdAt).toLocaleString('pt-BR')}
-                            </p>
+                          <div>
+                            <p className="font-medium text-gray-900">{order.orderNumber} - {order.customerName}</p>
+                            <p className="text-sm text-gray-600">{order.items.length} itens • {order.type === 'DELIVERY' ? '🚚 Entrega' : '🏃 Retirada'}</p>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Ações Rápidas */}
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {order.status === 'PENDING' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'CONFIRMED');
-                            }}
-                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition"
-                          >
-                            ✓ Confirmar
-                          </button>
-                        )}
-                        {order.status === 'CONFIRMED' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'PREPARING');
-                            }}
-                            className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition"
-                          >
-                            🍳 Preparar
-                          </button>
-                        )}
-                        {order.status === 'PREPARING' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'READY');
-                            }}
-                            className="px-3 py-1 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition"
-                          >
-                            ✓ Pronto
-                          </button>
-                        )}
-                        {order.status === 'READY' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'DELIVERED');
-                            }}
-                            className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
-                          >
-                            ✓ Entregar
-                          </button>
-                        )}
-                        {!['DELIVERED', 'CANCELLED'].includes(order.status) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm('Tem certeza que deseja cancelar este pedido?')) {
-                                updateOrderStatus(order.id, 'CANCELLED');
-                              }
-                            }}
-                            className="px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition"
-                          >
-                            ✕ Cancelar
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOrder(order);
-                            setShowOrderDetails(true);
-                          }}
-                          className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition"
-                        >
-                          👁️ Detalhes
-                        </button>
+                        <div className="text-right">
+                          <p className="font-bold text-gray-900">R$ {Number(order.total).toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

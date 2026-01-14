@@ -4,19 +4,33 @@
   /* Configurações customizadas aqui se necessário */
 }
 
-/* Forçar cor preta em todas as labels para melhor legibilidade */
+:root {
+  --input-text-color: #111827;
+  --input-placeholder-color: #6B7280;
+}
+
+/* Labels padrão */
 label {
-  color: #111827 !important;
-  font-weight: 600 !important;
+  color: #111827;
+  font-weight: 600;
 }
 
-/* Garantir que inputs e textareas tenham texto preto */
+/* Inputs e textareas usam variável --input-text-color (pode ser sobrescrita pelo app) */
 input, textarea, select {
-  color: #111827 !important;
+  color: var(--input-text-color);
 }
 
-/* Garantir contraste em placeholders */
+/* Placeholder usa variável --input-placeholder-color */
 input::placeholder, textarea::placeholder {
-  color: #6B7280 !important;
+  color: var(--input-placeholder-color);
   opacity: 0.7;
+}
+
+/* Utilitário para esconder scroll horizontal/vertical quando usado em containers roláveis */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit */
 }

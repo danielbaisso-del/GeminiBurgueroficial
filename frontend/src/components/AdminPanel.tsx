@@ -105,7 +105,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -115,7 +115,7 @@ export default function AdminPanel() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6">
             <div className="flex items-center justify-between mb-2">
               <ShoppingBag className="w-8 h-8 text-emerald-500" />
               <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -124,7 +124,7 @@ export default function AdminPanel() {
             <p className="text-sm text-zinc-400">Total de Pedidos</p>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6">
             <div className="flex items-center justify-between mb-2">
               <Package className="w-8 h-8 text-blue-500" />
             </div>
@@ -132,7 +132,7 @@ export default function AdminPanel() {
             <p className="text-sm text-zinc-400">Receita Total</p>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-8 h-8 text-yellow-500" />
             </div>
@@ -140,7 +140,7 @@ export default function AdminPanel() {
             <p className="text-sm text-zinc-400">Pedidos Pendentes</p>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6">
             <div className="flex items-center justify-between mb-2">
               <CheckCircle className="w-8 h-8 text-green-500" />
             </div>
@@ -150,7 +150,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar -mx-2 px-2">
           {['all', 'pending', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'].map((status) => (
             <button
               key={status}
