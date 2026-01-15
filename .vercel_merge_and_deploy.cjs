@@ -2,6 +2,8 @@ const https = require('https');
 const owner = 'danielbaisso-del';
 const repo = 'GeminiBurgueroficial';
 const branch = 'embed-frontend-into-backend';
+// IMPORTANT: do NOT hardcode tokens in the repository.
+// Read tokens from environment variables instead.
 const gh = process.env.GITHUB_TOKEN;
 const vtoken = process.env.VERCEL_TOKEN;
 if(!gh || !vtoken){ console.error('Missing GITHUB_TOKEN or VERCEL_TOKEN env vars'); process.exit(2);} 
