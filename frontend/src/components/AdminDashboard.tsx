@@ -221,7 +221,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           price: 22.00,
           categoryId: '2',
           available: true,
-          image: 'https://png.pngtree.com/png-vector/20250813/ourlarge/pngtree-golden-brown-rustic-potato-wedges-served-with-spices-on-vivid-orange-png-image_16719846.png'
+          image: getImagePath('batata_rustica.png')
         },
         {
           id: 's4',
@@ -1355,7 +1355,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                               : product.image.startsWith('/')
                                 ? product.image
                                 : product.image.startsWith('uploads/')
-                                  ? `/${product.image}`
+                                  ? `/${product.image}?v=${Date.now()}`
                                   : getImagePath(product.image)
                             : undefined
                         }

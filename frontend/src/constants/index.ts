@@ -76,7 +76,7 @@ export const MENU_ITEMS: Product[] = [
     description: 'Batatas com casca temperadas com alecrim, páprica e sal grosso. Acompanha maionese verde.',
     price: 22.00,
     category: 'sides',
-    image: 'https://png.pngtree.com/png-vector/20250813/ourlarge/pngtree-golden-brown-rustic-potato-wedges-served-with-spices-on-vivid-orange-png-image_16719846.png'
+    image: getImagePath('batata_rustica.png')
   },
   {
     id: 's4',

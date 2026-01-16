@@ -4,6 +4,7 @@
  */
 export function getImagePath(imageName: string): string {
   // Para imagens locais do frontend, sempre usar caminho direto
-  // O Vite serve arquivos da pasta public diretamente na raiz
-  return `/${imageName}`;
+  // Adiciona cache-bust para forçar reload quando necessário
+  const ts = Date.now();
+  return `/${imageName}?v=${ts}`;
 }

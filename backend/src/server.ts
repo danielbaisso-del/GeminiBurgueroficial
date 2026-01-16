@@ -22,7 +22,6 @@ config();
 const app = express();
 const PORT = Number(process.env.PORT || 3333);
 
-// Middlewares
 app.use(cors({
   origin: process.env.CORS_ORIGIN?.split(',') || process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
@@ -37,7 +36,23 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Security headers
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        connectSrc: ["'self'", 'ws:', 'http:', 'https:'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
+        fontSrc: ["'self'", 'https:', 'data:'],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        frameAncestors: ["'self'"],
+      },
+    },
+  })
+);
 
 // Serve frontend build if present (prefer backend/public, fallback to frontend/dist)
 const backendPublic = path.join(__dirname, '..', 'public');
@@ -64,10 +79,10 @@ app.use('/api/payments', pagamentoRotas);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV,
   });
 });
 
@@ -95,7 +110,22 @@ app.get(/^\/(?!api).*/, (req, res) => {
 
 // Error handler (placed last)
 app.use(tratadorErros);
+
 if (require.main === module) {
+  // Instrumentation: log environment and Node info to help debugging startup failures
+  process.stdout.write(`Node: ${process.version}\n`);
+  process.stdout.write(`PORT: ${PORT}\n`);
+  process.stdout.write(`NODE_ENV: ${process.env.NODE_ENV}\n`);
+
+  process.on('uncaughtException', (err) => {
+    process.stderr.write(`uncaughtException: ${String(err)}\n`);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    process.stderr.write(`unhandledRejection: ${String(reason)}\n`);
+  });
+
   const server = app.listen(PORT, '0.0.0.0', () => {
     process.stdout.write(`🚀 Server running on http://localhost:${PORT}\n`);
     process.stdout.write(`📊 Environment: ${process.env.NODE_ENV}\n`);
