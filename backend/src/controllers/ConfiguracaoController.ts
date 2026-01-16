@@ -23,6 +23,7 @@ const updateConfigSchema = z.object({
   isOpen: z.boolean().optional(),
   geminiApiKey: z.string().optional(),
   aiEnabled: z.boolean().optional(),
+  pixQr: z.string().optional(),
 });
 
 export class ConfiguracaoController {
@@ -50,6 +51,7 @@ export class ConfiguracaoController {
           accentColor: true,
           textColor: true,
           bgColor: true,
+          pixQr: true,
           zipCode: true,
           street: true,
           number: true,
@@ -101,6 +103,7 @@ export class ConfiguracaoController {
         accentColor: true,
         textColor: true,
         bgColor: true,
+          pixQr: true,
         zipCode: true,
         street: true,
         number: true,
@@ -127,18 +130,21 @@ export class ConfiguracaoController {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    if (!type || !['logo', 'banner'].includes(type)) {
-      return res.status(400).json({ error: 'Invalid type. Use "logo" or "banner"' });
+    if (!type || !['logo', 'banner', 'pix'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid type. Use "logo", "banner" or "pix"' });
     }
 
     // URL da imagem (em produção, usar CDN ou storage service)
     const imageUrl = `/uploads/${file.filename}`;
 
-    const updateData: { logo?: string; banner?: string } = {};
+    const updateData: { logo?: string; banner?: string; pixQr?: string } = {};
     if (type === 'logo') {
       updateData.logo = imageUrl;
     } else if (type === 'banner') {
       updateData.banner = imageUrl;
+    } else if (type === 'pix') {
+      // save the pix QR image path to tenant.pixQr
+      updateData.pixQr = imageUrl;
     }
 
     await prisma.tenant.update({

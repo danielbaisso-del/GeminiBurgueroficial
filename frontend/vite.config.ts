@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: 3000,
+        // Bind to all interfaces to avoid Windows loopback/IPv6 issues during dev
         host: '0.0.0.0',
         proxy: {
           '/api': {

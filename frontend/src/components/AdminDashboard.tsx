@@ -42,6 +42,7 @@ interface Config {
   city: string;
   state: string;
   isOpen: boolean;
+  pixQr?: string;
 }
 
 interface AdminDashboardProps {
@@ -687,14 +688,43 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
-  const handleImageUpload = async (type: 'logo' | 'banner', file: File) => {
-    // Simular upload - em produção, usar um serviço real
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const imageUrl = reader.result as string;
-      setConfig(prev => prev ? { ...prev, [type]: imageUrl } : null);
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = async (type: 'logo' | 'banner' | 'pix', file: File) => {
+    const token = localStorage.getItem('adminToken');
+    // Modo demonstração: usar data URI localmente
+    if (token?.includes('demo-token')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageUrl = reader.result as string;
+        setConfig(prev => prev ? { ...prev, [type]: imageUrl } : null);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('type', type);
+      const response = await fetch('/api/config/upload-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+      const body = await response.json();
+      const url = body.url;
+      if (type === 'pix') {
+        setConfig(prev => prev ? { ...prev, pixQr: url } : null);
+      } else {
+        setConfig(prev => prev ? { ...prev, [type]: url } : null);
+      }
+      alert('Upload realizado com sucesso');
+    } catch (err) {
+      alert('Erro ao enviar imagem');
+    }
   };
 
   const deleteProduct = async (id: string) => {
@@ -788,6 +818,38 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     } catch (error) {
       // erro ao atualizar status
       alert('Erro ao atualizar status do pedido');
+    }
+  };
+
+  const confirmOrder = async (orderId: string) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      // demo mode: update locally
+      if (token?.includes('demo-token')) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CONFIRMED' } : o));
+        if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status: 'CONFIRMED' });
+        loadStats();
+        return;
+      }
+
+      const resp = await fetch(`/api/payments/dev/confirm/${orderId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!resp.ok) throw new Error('Confirm failed');
+
+      const body = await resp.json();
+      // update UI
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CONFIRMED', paymentStatus: 'PAID' } : o));
+      if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status: 'CONFIRMED', paymentStatus: 'PAID' });
+      loadStats();
+      alert('Pagamento confirmado com sucesso');
+    } catch (err) {
+      alert('Falha ao confirmar pagamento');
     }
   };
 
@@ -1410,6 +1472,41 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               </div>
             </div>
 
+            {/* PIX QR Code */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                QR Code PIX
+              </h3>
+              <p className="text-sm text-gray-600 mb-3">Faça upload da imagem do QR code PIX ou cole a data-URI abaixo.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  {config.pixQr ? (
+                    <img src={config.pixQr} alt="PIX QR" className="w-44 h-44 object-contain border rounded-lg" />
+                  ) : (
+                    <div className="w-44 h-44 border rounded-lg flex items-center justify-center text-gray-400">Sem QR</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">Upload do QR</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => e.target.files?.[0] && handleImageUpload('pix', e.target.files[0])}
+                    className="block"
+                  />
+                  <label className="block text-sm font-medium text-gray-900 mt-4 mb-2">Ou cole data-URI</label>
+                  <textarea
+                    value={config.pixQr || ''}
+                    onChange={(e) => setConfig(prev => prev ? { ...prev, pixQr: e.target.value } : null)}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Ao salvar, o valor será enviado ao servidor.</p>
+                </div>
+              </div>
+            </div>
+
             {/* Cores e Visual */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -1779,7 +1876,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <>
                       {selectedOrder.status === 'PENDING' && (
                         <button
-                          onClick={() => updateOrderStatus(selectedOrder.id, 'CONFIRMED')}
+                          onClick={() => confirmOrder(selectedOrder.id)}
                           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
                         >
                           ✓ Confirmar Pedido

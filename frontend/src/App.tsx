@@ -12,7 +12,12 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>(() => {
+    // Dev: imagem PIX injetada para testes locais. Remova quando não for necessária.
+    return 'data:image/png;base64,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';
+  });
+  const [isQrLoading, setIsQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isCepLoading, setIsCepLoading] = useState(false);
@@ -201,19 +206,100 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (showPayment && orderDetails.paymentMethod === 'PIX') {
-      const key = '12997775889';
-      const amount = cartTotal.toFixed(2);
-      const name = 'Gemini Burger';
-      const city = 'Sao Paulo';
-      const description = 'Pagamento do pedido';
-      const amountField = `54${amount.length.toString().padStart(2,'0')}${amount}`;
-      const payload = `00020101021126790014BR.GOV.BCB.PIX0113${key.length.toString().padStart(2,'0')}${key}5204000065303986${amountField}5802BR59${name.length.toString().padStart(2,'0')}${name}60${city.length.toString().padStart(2,'0')}${city}6207${description.length.toString().padStart(2,'0')}***`;
-      const crc = crc16(payload + '6304');
-      const fullPayload = payload + '6304' + crc;
-      QRCode.toDataURL(fullPayload).then(setQrCodeUrl);
+    let mounted = true;
+    async function fetchPix() {
+      if (!showPayment || orderDetails.paymentMethod !== 'PIX') return;
+      setIsQrLoading(true);
+      setQrCodeUrl('');
+      setQrError(null);
+      try {
+        // In development prefer the saved sample PNG to avoid external provider
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        let resp;
+        if (isLocal) {
+          resp = await fetch('/api/payments/dev/sample-pix');
+        } else {
+          resp = await fetch('/api/payments/pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: Number(cartTotal), description: 'Pagamento do pedido' })
+          });
+        }
+        if (!mounted) return;
+        if (!resp.ok) {
+          const txt = await resp.text();
+          console.error('pix create error', txt);
+          setQrError(typeof txt === 'string' ? txt : JSON.stringify(txt));
+          setQrCodeUrl('');
+        } else {
+          // If we called the dev sample endpoint it returns an image binary, not JSON
+          const contentType = resp.headers.get('content-type') || '';
+          if (contentType.includes('image')) {
+            // use the endpoint directly as src
+            setQrCodeUrl('/api/payments/dev/sample-pix');
+          } else {
+            const data = await resp.json();
+            const url = data.qrCodePng || data.qrCode || data.qrCodeData || '';
+            if (!url) {
+              setQrError('Resposta sem qrCode');
+              setQrCodeUrl('');
+            } else {
+              setQrCodeUrl(url);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('failed to fetch pix', e);
+        setQrError(String(e));
+        setQrCodeUrl('');
+      } finally {
+        if (mounted) setIsQrLoading(false);
+      }
     }
+
+    fetchPix();
+    return () => { mounted = false; };
   }, [showPayment, orderDetails.paymentMethod, cartTotal]);
+
+  async function generatePixViaApi() {
+    setIsQrLoading(true);
+    setQrError(null);
+    setQrCodeUrl('');
+    try {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      let resp;
+      if (isLocal) {
+        resp = await fetch('/api/payments/dev/sample-pix');
+      } else {
+        resp = await fetch('/api/payments/pix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: Number(cartTotal), description: 'Pagamento do pedido (manual)' })
+        });
+      }
+      if (!resp.ok) {
+        const txt = await resp.text();
+        setQrError(typeof txt === 'string' ? txt : JSON.stringify(txt));
+        return;
+      }
+      const contentType = resp.headers.get('content-type') || '';
+      if (contentType.includes('image')) {
+        setQrCodeUrl('/api/payments/dev/sample-pix');
+      } else {
+        const data = await resp.json();
+        const url = data.qrCodePng || data.qrCode || data.qrCodeData || '';
+        if (!url) {
+          setQrError('Resposta sem qrCode');
+        } else {
+          setQrCodeUrl(url);
+        }
+      }
+    } catch (e) {
+      setQrError(String(e));
+    } finally {
+      setIsQrLoading(false);
+    }
+  }
 
   const filteredItems = useMemo(() => {
     if (activeCategory === 'all') return menuItems;
@@ -747,11 +833,20 @@ Aguardando confirmação!`.trim();
                 <div className="text-center">
                   <h3 className="text-xl text-white mb-4">Pague com PIX</h3>
                   <p className="text-zinc-400 mb-6">Escaneie o QR Code abaixo para pagar R$ {cartTotal.toFixed(2)}</p>
-                  {qrCodeUrl ? (
+                  {isQrLoading ? (
+                    <p className="text-zinc-400">Gerando QR Code...</p>
+                  ) : qrCodeUrl ? (
                     <img src={qrCodeUrl} alt="QR Code PIX" className="mx-auto mb-6" />
                   ) : (
-                    <p className="text-zinc-400">Gerando QR Code...</p>
+                    <div className="mb-4">
+                      <p className="text-zinc-400">Não foi possível gerar o QR Code.</p>
+                      <div className="mt-3 flex gap-2 justify-center">
+                        <button onClick={generatePixViaApi} className="py-2 px-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl">Gerar QR manualmente</button>
+                      </div>
+                      {qrError && <p className="text-red-400 mt-3 text-sm">Erro: {qrError}</p>}
+                    </div>
                   )}
+                  {qrError && !isQrLoading && qrCodeUrl && <p className="text-red-400 mt-3 text-sm">Erro: {qrError}</p>}
                   <button 
                     onClick={generateWhatsAppLink}
                     className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-2xl transition-all"

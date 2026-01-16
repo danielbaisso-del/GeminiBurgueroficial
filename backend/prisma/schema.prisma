@@ -41,6 +41,8 @@ model Tenant {
   // Configurações visuais
   logo         String?
   banner       String?
+  // QR Code PIX (data URI or path to uploaded image)
+  pixQr        String?
   primaryColor String    @default("#ea580c") // orange-600
   secondaryColor String  @default("#18181b") // zinc-950
   accentColor  String    @default("#f97316") // orange-500
