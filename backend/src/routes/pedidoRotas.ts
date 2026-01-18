@@ -14,3 +14,13 @@ pedidoRotas.get('/customers/orders/:phone', tenantMiddleware, (req, res) => {
   pedidoController.getByCustomerPhone(req, res);
 });
 
+// Protected - gerenciar pedidos (painel admin)
+pedidoRotas.use(autenticacaoMiddleware);
+pedidoRotas.use(tenantMiddleware);
+pedidoRotas.get('/', pedidoController.list);
+pedidoRotas.get('/:id', pedidoController.getById);
+pedidoRotas.patch('/:id/status', pedidoController.updateStatus);
+pedidoRotas.delete('/:id', pedidoController.cancel);
+
+export { pedidoRotas };
+

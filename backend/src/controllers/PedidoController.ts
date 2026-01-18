@@ -70,7 +70,8 @@ export class PedidoController {
       return {
         productId: item.productId,
         quantity: item.quantity,
-        unitPrice: Number(price),
+        price: Number(price),
+        subtotal: Number(subtotal),
         notes: item.notes,
       };
     });
@@ -305,7 +306,7 @@ export class PedidoController {
         productId: item.productId,
         name: item.product.name,
         quantity: item.quantity,
-        price: item.unitPrice,
+        price: item.price,
       })),
       isDelivery: order.type === 'DELIVERY',
       createdAt: order.createdAt,
