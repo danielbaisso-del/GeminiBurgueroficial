@@ -18,25 +18,6 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
     setIsLoading(true);
 
     try {
-      // Tentando fazer login
-      
-      // Login de demonstração temporário (sem backend)
-      if (email === 'admin@demo.com' && password === 'demo123') {
-        // Login de demonstração aceito
-        const mockData = {
-          token: 'demo-token-' + Date.now(),
-          user: { id: '1', name: 'Admin Demo', email: 'admin@demo.com', role: 'OWNER' }
-        };
-        
-        localStorage.setItem('adminToken', mockData.token);
-        localStorage.setItem('adminUser', JSON.stringify(mockData.user));
-        
-        // Dados salvos no localStorage
-        // Chamando onLoginSuccess
-        onLoginSuccess();
-        return;
-      }
-      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -45,26 +26,19 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
         body: JSON.stringify({ email, password }),
       });
 
-      // resposta recebida do servidor
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        // erro na resposta do servidor
         throw new Error(errorData.message || 'Credenciais inválidas');
       }
 
       const data = await response.json();
-      // Login bem-sucedido
       
-      // Salvar token no localStorage
+      // Salvar token e dados do usuário no localStorage
       localStorage.setItem('adminToken', data.token);
       localStorage.setItem('adminUser', JSON.stringify(data.user));
       
-      // Dados salvos no localStorage
-      // Chamando onLoginSuccess
       onLoginSuccess();
     } catch (err) {
-      // erro no login
       setError(err instanceof Error ? err.message : 'Erro ao fazer login');
     } finally {
       setIsLoading(false);
@@ -142,9 +116,6 @@ export default function LoginAdmin({ onLoginSuccess }: LoginAdminProps) {
               'Entrar'
             )}
           </button>
-          <p className="text-xs text-blue-600 mt-2">
-            ℹ️ Use estas credenciais para acessar o painel sem banco de dados configurado.
-          </p>
         </form>
 
         <div className="mt-4 text-center text-sm text-gray-600">

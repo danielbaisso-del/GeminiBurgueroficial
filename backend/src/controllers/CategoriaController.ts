@@ -63,6 +63,29 @@ export class CategoriaController {
     return res.json(categories);
   }
 
+  async listAllPublic(req: Request, res: Response) {
+    // Listar todas as categorias de todos os tenants (para uso público no app)
+    const categories = await prisma.category.findMany({
+      where: {
+        active: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        icon: true,
+      },
+      orderBy: { order: 'asc' },
+    });
+
+    // Remover duplicatas pelo slug
+    const uniqueCategories = Array.from(
+      new Map(categories.map(cat => [cat.slug, cat])).values()
+    );
+
+    return res.json(uniqueCategories);
+  }
+
   async update(req: Request, res: Response) {
     const { id } = req.params;
     const data = createCategorySchema.partial().parse(req.body);

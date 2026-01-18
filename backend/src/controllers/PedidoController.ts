@@ -7,7 +7,8 @@ const createOrderSchema = z.object({
   customerName: z.string(),
   phone: z.string(),
   email: z.string().email().optional(),
-  type: z.enum(['DELIVERY', 'PICKUP']),
+  type: z.enum(['DELIVERY', 'PICKUP']).optional(),
+  isDelivery: z.boolean().optional(), // Novo formato do frontend
   deliveryAddress: z.object({
     street: z.string(),
     number: z.string(),
@@ -20,11 +21,21 @@ const createOrderSchema = z.object({
       lng: z.number(),
     }).optional(),
   }).optional(),
-  paymentMethod: z.enum(['PIX', 'CREDIT_CARD', 'DEBIT_CARD', 'CASH']),
+  address: z.object({
+    street: z.string(),
+    number: z.string(),
+    district: z.string(),
+    zipCode: z.string(),
+    complement: z.string().optional(),
+    referencePoint: z.string().optional(),
+  }).optional(), // Novo formato do frontend
+  paymentMethod: z.string(),
   notes: z.string().optional(),
   items: z.array(z.object({
     productId: z.string(),
+    name: z.string().optional(),
     quantity: z.number().positive(),
+    price: z.number().positive(),
     notes: z.string().optional(),
   })),
   couponCode: z.string().optional(),
@@ -51,15 +62,15 @@ export class PedidoController {
     // Calcular total
     let total = 0;
     const orderItems = data.items.map(item => {
-      const product = products.find(p => p.id === item.productId)!;
-      const subtotal = Number(product.price) * item.quantity;
+      const product = products.find(p => p.id === item.productId);
+      const price = product?.price || item.price || 0;
+      const subtotal = Number(price) * item.quantity;
       total += subtotal;
 
       return {
         productId: item.productId,
         quantity: item.quantity,
-        price: product.price,
-        subtotal,
+        unitPrice: Number(price),
         notes: item.notes,
       };
     });
@@ -95,17 +106,31 @@ export class PedidoController {
       ? `#${String(parseInt(lastOrder.orderNumber.replace('#', '')) + 1).padStart(4, '0')}`
       : '#0001';
 
+    // Determinar tipo de entrega
+    const orderType = data.type || (data.isDelivery ? 'DELIVERY' : 'PICKUP');
+
+    // Preparar endereço de entrega
+    const deliveryAddress = data.deliveryAddress || (data.address ? {
+      street: data.address.street,
+      number: data.address.number,
+      district: data.address.district,
+      zipCode: data.address.zipCode,
+      complement: data.address.complement,
+      referencePoint: data.address.referencePoint,
+    } : undefined);
+
     // Criar pedido
     const order = await prisma.order.create({
       data: {
         tenantId: tenant.id,
         customerId: customer.id,
         orderNumber,
-        type: data.type,
-        deliveryAddress: data.deliveryAddress || undefined,
-        paymentMethod: data.paymentMethod,
+        type: orderType,
+        deliveryAddress: orderType === 'DELIVERY' ? deliveryAddress : undefined,
+        paymentMethod: data.paymentMethod as any,
         notes: data.notes,
         total,
+        status: 'PENDING',
         items: {
           create: orderItems,
         },
@@ -245,4 +270,47 @@ export class PedidoController {
 
     return res.json(updated);
   }
-}
+
+  async getByCustomerPhone(req: Request, res: Response) {
+    const { phone } = req.params;
+    const tenant = req.tenant!;
+
+    const orders = await prisma.order.findMany({
+      where: {
+        customer: {
+          phone: phone,
+        },
+        tenantId: tenant.id,
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    const formatted = orders.map(order => ({
+      id: order.id,
+      customerName: order.customer.name,
+      customerPhone: order.customer.phone,
+      status: order.status,
+      total: order.total,
+      items: order.items.map(item => ({
+        productId: item.productId,
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.unitPrice,
+      })),
+      isDelivery: order.type === 'DELIVERY',
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    }));
+
+    return res.json(formatted);
+  }}

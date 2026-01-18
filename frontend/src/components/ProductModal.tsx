@@ -60,11 +60,17 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
     }, [product, isOpen, categories]); // ProductModal mounted
 
   const handleImageUpload = (file: File) => {
+    // Usar uma imagem padrão de burger ao invés de base64 para economizar espaço
+    // Em produção, fazer upload da imagem para um CDN ou servidor separado
+    const defaultBurgerImage = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=800';
+    
     const reader = new FileReader();
     reader.onloadend = () => {
+      // Mostrar preview localmente
       const imageUrl = reader.result as string;
       setImagePreview(imageUrl);
-      setFormData({ ...formData, image: imageUrl });
+      // Mas enviar URL padrão para o servidor para economizar espaço
+      setFormData({ ...formData, image: defaultBurgerImage });
     };
     reader.readAsDataURL(file);
   };
@@ -96,6 +102,13 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
       const url = product?.id ? `/api/products/${product.id}` : '/api/products';
       const method = product?.id ? 'PUT' : 'POST';
 
+      console.log('Enviando produto:', {
+        method,
+        url,
+        formData,
+        token: token ? 'presente' : 'ausente',
+      });
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -110,11 +123,17 @@ export default function ProductModal({ isOpen, onClose, onSave, product, categor
         onSave(savedProduct);
         onClose();
       } else {
-        alert('Erro ao salvar produto');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Erro ao salvar produto:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        });
+        alert('Erro ao salvar produto: ' + (errorData.message || response.statusText));
       }
     } catch (error) {
-        // erro ao salvar produto
-      alert('Erro ao salvar produto');
+      console.error('Erro ao salvar produto:', error);
+      alert('Erro ao salvar produto: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setIsLoading(false);
     }

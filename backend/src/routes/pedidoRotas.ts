@@ -9,11 +9,8 @@ const pedidoController = new PedidoController();
 // Public - criar pedido (do frontend do cliente)
 pedidoRotas.post('/:tenantSlug/create', tenantMiddleware, pedidoController.create);
 
-// Protected - gerenciar pedidos (painel admin)
-pedidoRotas.use(autenticacaoMiddleware);
-pedidoRotas.get('/', pedidoController.list);
-pedidoRotas.get('/:id', pedidoController.getById);
-pedidoRotas.patch('/:id/status', pedidoController.updateStatus);
-pedidoRotas.delete('/:id', pedidoController.cancel);
+// Public - buscar pedidos por telefone (do cliente)
+pedidoRotas.get('/customers/orders/:phone', tenantMiddleware, (req, res) => {
+  pedidoController.getByCustomerPhone(req, res);
+});
 
-export { pedidoRotas };

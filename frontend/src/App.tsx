@@ -4,6 +4,7 @@ import { ShoppingCart, X, MessageSquare, MapPin, CreditCard, Star, Trash2, Plus,
 import { MENU_ITEMS, WHATSAPP_NUMBER } from './constants';
 import { Product, CartItem, OrderDetails, PaymentMethod } from './types';
 import { getAIRecommendation } from './services/geminiService';
+import { fetchPublicCategories, fetchPublicProducts, saveOrderToBackend, fetchCustomerOrders } from './services/apiClient';
 import QRCode from 'qrcode';
 
 export default function App() {
@@ -77,87 +78,49 @@ export default function App() {
   // Cor do texto para os inputs (padrão vindo da config do admin ou branca)
   const inputTextColor = appConfig?.textColor || '#ffffff';
   
-  // Helper para converter categoryId em slug (definido ANTES de ser usado)
-  const getCategorySlugById = (categoryId: string) => {
-    const map: Record<string, string> = {
-      '1': 'burgers',
-      '2': 'sides',
-      '3': 'drinks',
-      '4': 'desserts',
-      '5': 'combos',
-      '6': 'alcohol'
-    };
-    return map[categoryId] || 'burgers';
-  };
+  // State para categorias da API
+  const [apiCategories, setApiCategories] = useState<Array<{id: string; name: string; slug: string}>>([]);
   
-  // Carregar produtos do admin se existirem
-  const [menuItems, setMenuItems] = useState<Product[]>(() => {
-    const demoProducts = localStorage.getItem('demoProducts');
-    if (demoProducts) {
-      try {
-        const parsedProducts = JSON.parse(demoProducts) as unknown;
-        if (Array.isArray(parsedProducts)) {
-          return parsedProducts.map((p) => {
-            const obj = p as Record<string, unknown>;
-            return {
-              id: String(obj.id || ''),
-              name: String(obj.name || ''),
-              description: String(obj.description || ''),
-              price: Number(obj.price) || 0,
-              category: getCategorySlugById(String(obj.categoryId || '1')),
-              image: String(obj.image || ''),
-              tags: []
-            } as Product;
-          });
-        }
-      } catch (e) {
-        // erro ao parsear produtos demo
-      }
-    }
-
-    // Nenhum produto no localStorage, usando MENU_ITEMS
-    return MENU_ITEMS;
-  });
+  // Carregar produtos DO BACKEND (não do localStorage)
+  const [menuItems, setMenuItems] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   
-  // Atualizar menuItems quando localStorage mudar
+  // Carregamento de dados da API ao inicializar
   useEffect(() => {
-    const handleStorageChange = () => {
-      const demoProducts = localStorage.getItem('demoProducts');
-      if (demoProducts) {
-        try {
-          const parsedProducts = JSON.parse(demoProducts) as unknown;
-          if (Array.isArray(parsedProducts)) {
-            const converted = parsedProducts.map((p) => {
-              const obj = p as Record<string, unknown>;
-              return {
-                id: String(obj.id || ''),
-                name: String(obj.name || ''),
-                description: String(obj.description || ''),
-                price: Number(obj.price) || 0,
-                category: getCategorySlugById(String(obj.categoryId || '1')),
-                image: String(obj.image || ''),
-                tags: []
-              } as Product;
-            });
-            setMenuItems(converted);
-          }
-          } catch (e) {
-            // erro ao carregar produtos demo
-          }
+    const loadDataFromBackend = async () => {
+      setIsLoadingProducts(true);
+      try {
+        // Carregar categorias
+        const categories = await fetchPublicCategories();
+        setApiCategories(categories);
+        
+        // Carregar produtos
+        const products = await fetchPublicProducts();
+        // Não converter agora, vamos usar categoryId direto
+        const appProducts: Product[] = products.map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description || '',
+          price: Number(p.price),
+          category: p.categoryId as any, // Usar categoryId como category
+          image: p.image || 'https://via.placeholder.com/400?text=Produto',
+          tags: []
+        }));
+        setMenuItems(appProducts);
+      } catch (error) {
+        console.error('Erro ao carregar dados do backend:', error);
+        // Fallback vazio se backend não estiver disponível
+        setMenuItems([]);
+      } finally {
+        setIsLoadingProducts(false);
       }
     };
     
-    window.addEventListener('storage', handleStorageChange);
+    loadDataFromBackend();
     
-    // Verificar a cada 2 segundos se houve mudança
-    const interval = setInterval(() => {
-      handleStorageChange();
-    }, 2000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
+    // Recarregar a cada 30 segundos para manter atualizado
+    const interval = setInterval(loadDataFromBackend, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const [orderDetails, setOrderDetails] = useState<OrderDetails>({
@@ -178,6 +141,11 @@ export default function App() {
     cashValue: '',
     needsChange: false
   });
+
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [orderSaveError, setOrderSaveError] = useState<string | null>(null);
+  const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
 
   const cartTotal = useMemo(() => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -310,23 +278,60 @@ export default function App() {
     setAiInput('');
   };
 
-  const generateWhatsAppLink = () => {
-    const itemsList = cart.map(item => `• ${item.quantity}x ${item.name} (R$ ${(item.price * item.quantity).toFixed(2)})`).join('\n');
-    
-    let addressInfo = '';
-    if (orderDetails.isDelivery) {
-      addressInfo = `
+  const generateWhatsAppLink = async () => {
+    setIsSavingOrder(true);
+    setOrderSaveError(null);
+
+    try {
+      // Salvar pedido no banco de dados PRIMEIRO
+      const orderData = {
+        customerName: orderDetails.customerName,
+        phone: orderDetails.phone,
+        items: cart.map(item => ({
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        total: cartTotal,
+        paymentMethod: orderDetails.paymentMethod,
+        isDelivery: orderDetails.isDelivery,
+        address: orderDetails.isDelivery ? {
+          street: orderDetails.street,
+          number: orderDetails.number,
+          district: orderDetails.district,
+          zipCode: orderDetails.zipCode,
+          complement: orderDetails.complement,
+          referencePoint: orderDetails.referencePoint,
+        } : undefined,
+        notes: orderDetails.notes,
+      };
+
+      const savedOrder = await saveOrderToBackend(orderData);
+      
+      if (!savedOrder) {
+        setOrderSaveError('Erro ao salvar pedido. Tente novamente.');
+        setIsSavingOrder(false);
+        return;
+      }
+
+      // Gerar mensagem para WhatsApp
+      const itemsList = cart.map(item => `• ${item.quantity}x ${item.name} (R$ ${(item.price * item.quantity).toFixed(2)})`).join('\n');
+      
+      let addressInfo = '';
+      if (orderDetails.isDelivery) {
+        addressInfo = `
 *ENDEREÇO:*
 📍 Rua: ${orderDetails.street}, ${orderDetails.number}
 🏙️ Bairro: ${orderDetails.district}
 📫 CEP: ${orderDetails.zipCode}
 🏠 Comp: ${orderDetails.complement || 'N/A'}
-🗺️ Ref: ${orderDetails.referencePoint || 'N/A'}
-${orderDetails.coords ? `📍 GPS: https://www.google.com/maps?q=${orderDetails.coords.lat},${orderDetails.coords.lng}` : ''}`;
-    }
+🗺️ Ref: ${orderDetails.referencePoint || 'N/A'}`;
+      }
 
-    const message = `
+      const message = `
 *🍔 NOVO PEDIDO - GEMINI BURGER*
+*Pedido #${savedOrder.id?.substring(0, 6) || 'NOVO'}*
 ---
 *CLIENTE:* ${orderDetails.customerName}
 *TELEFONE:* ${orderDetails.phone}
@@ -338,63 +343,43 @@ ${itemsList}
 
 *💰 TOTAL:* R$ ${cartTotal.toFixed(2)}
 *💳 PAGAMENTO:* ${orderDetails.paymentMethod}
-${orderDetails.paymentMethod.includes('Cartão') ? `*💳 CARTÃO:* ${orderDetails.cardName} - **** **** **** ${orderDetails.cardNumber?.slice(-4)}` : ''}
 ${orderDetails.notes ? `*📝 OBS:* ${orderDetails.notes}` : ''}
 ---
+✅ Pedido salvo no sistema!
 Aguardando confirmação!`.trim();
 
-    // Salvar pedido no localStorage para o admin visualizar
-    const newOrder = {
-      id: Date.now().toString(),
-      orderNumber: `#${String(Date.now()).slice(-6)}`,
-      customerName: orderDetails.customerName,
-      phone: orderDetails.phone,
-      items: cart.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      total: cartTotal,
-      paymentMethod: orderDetails.paymentMethod,
-      status: 'pending',
-      isDelivery: orderDetails.isDelivery,
-      address: orderDetails.isDelivery ? {
-        street: orderDetails.street,
-        number: orderDetails.number,
-        district: orderDetails.district,
-        zipCode: orderDetails.zipCode,
-        complement: orderDetails.complement,
-        referencePoint: orderDetails.referencePoint,
-        coords: orderDetails.coords
-      } : null,
-      notes: orderDetails.notes,
-      createdAt: new Date().toISOString()
-    };
+      const encoded = encodeURIComponent(message);
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`, '_blank');
+      
+      // Limpar carrinho após enviar com sucesso
+      setCart([]);
+      setShowPayment(false);
+      setShowCheckout(false);
+      setShowCardModal(false);
+      setShowCashModal(false);
+      
+      // Recarregar histórico de pedidos
+      if (orderDetails.phone) {
+        const orders = await fetchCustomerOrders(orderDetails.phone);
+        setCustomerOrders(orders);
+      }
 
-    // Adicionar ao localStorage
-    const existingOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
-    existingOrders.unshift(newOrder);
-    localStorage.setItem('demoOrders', JSON.stringify(existingOrders));
-
-    const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`, '_blank');
-    
-    // Limpar carrinho após enviar
-    setCart([]);
-    setShowPayment(false);
-    setShowCheckout(false);
-    setShowCardModal(false);
-    setShowCashModal(false);
+    } catch (error) {
+      console.error('Erro ao processar pedido:', error);
+      setOrderSaveError('Erro ao processar pedido. Tente novamente.');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
   };
 
   const categories = [
     { id: 'all', label: 'Todos', icon: null },
-    { id: 'combos', label: 'Combos', icon: <Package size={16}/> },
-    { id: 'burgers', label: 'Hambúrgueres', icon: null },
-    { id: 'sides', label: 'Acompanhamentos', icon: null },
-    { id: 'drinks', label: 'Bebidas', icon: null },
-    { id: 'alcohol', label: 'Bebidas Alcoólicas', icon: <Beer size={16}/> },
-    { id: 'desserts', label: 'Sobremesas', icon: null },
+    ...apiCategories.map(cat => ({
+      id: cat.id,
+      label: cat.name,
+      icon: null
+    }))
   ];
 
   return (
@@ -608,6 +593,18 @@ Aguardando confirmação!`.trim();
                         className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-6 py-4 text-white placeholder-white/60 outline-none focus:border-orange-500 transition-all"
                         value={orderDetails.phone} onChange={e => setOrderDetails(prev => ({ ...prev, phone: e.target.value }))}
                       />
+                      {orderDetails.phone && (
+                        <button 
+                          onClick={async () => {
+                            const orders = await fetchCustomerOrders(orderDetails.phone);
+                            setCustomerOrders(orders);
+                            setShowOrderHistory(true);
+                          }}
+                          className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl text-sm transition-all"
+                        >
+                          📋 Ver meus pedidos
+                        </button>
+                      )}
                     </div>
 
                     <div className="flex gap-4">
@@ -752,11 +749,17 @@ Aguardando confirmação!`.trim();
                   ) : (
                     <p className="text-zinc-400">Gerando QR Code...</p>
                   )}
+                  {orderSaveError && (
+                    <div className="mb-4 p-3 bg-red-900/20 border border-red-600 text-red-400 rounded-lg text-sm">
+                      {orderSaveError}
+                    </div>
+                  )}
                   <button 
-                    onClick={generateWhatsAppLink}
-                    className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-2xl transition-all"
+                    onClick={() => generateWhatsAppLink()}
+                    disabled={isSavingOrder}
+                    className="w-full py-4 bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white font-bold rounded-2xl transition-all"
                   >
-                    Confirmar Pagamento e Enviar Pedido
+                    {isSavingOrder ? 'Processando...' : 'Confirmar Pagamento e Enviar Pedido'}
                   </button>
                 </div>
               ) : orderDetails.paymentMethod.includes('Cartão') ? (
@@ -794,23 +797,34 @@ Aguardando confirmação!`.trim();
                       />
                     </div>
                   </div>
+                  {orderSaveError && (
+                    <div className="mb-4 p-3 bg-red-900/20 border border-red-600 text-red-400 rounded-lg text-sm">
+                      {orderSaveError}
+                    </div>
+                  )}
                   <button 
-                    onClick={generateWhatsAppLink}
-                    disabled={!orderDetails.cardName || !orderDetails.cardNumber || !orderDetails.cardExpiry || !orderDetails.cardCvv}
-                    className="w-full mt-6 py-4 bg-green-600 hover:bg-green-500 disabled:bg-zinc-800 text-white font-bold rounded-2xl transition-all"
+                    onClick={() => generateWhatsAppLink()}
+                    disabled={!orderDetails.cardName || !orderDetails.cardNumber || !orderDetails.cardExpiry || !orderDetails.cardCvv || isSavingOrder}
+                    className="w-full mt-6 py-4 bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white font-bold rounded-2xl transition-all"
                   >
-                    Confirmar Pagamento e Enviar Pedido
+                    {isSavingOrder ? 'Processando...' : 'Confirmar Pagamento e Enviar Pedido'}
                   </button>
                 </div>
               ) : (
                 <div className="text-center">
                   <h3 className="text-xl text-white mb-4">Pagamento em Dinheiro</h3>
                   <p className="text-zinc-400 mb-6">Pagamento será feito na entrega/retirada.</p>
+                  {orderSaveError && (
+                    <div className="mb-4 p-3 bg-red-900/20 border border-red-600 text-red-400 rounded-lg text-sm">
+                      {orderSaveError}
+                    </div>
+                  )}
                   <button 
-                    onClick={generateWhatsAppLink}
-                    className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-2xl transition-all"
+                    onClick={() => generateWhatsAppLink()}
+                    disabled={isSavingOrder}
+                    className="w-full py-4 bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white font-bold rounded-2xl transition-all"
                   >
-                    Enviar Pedido
+                    {isSavingOrder ? 'Processando...' : 'Enviar Pedido'}
                   </button>
                 </div>
               )}
@@ -1017,6 +1031,64 @@ Aguardando confirmação!`.trim();
                 >
                   Confirmar <Send size={18} />
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order History Modal */}
+      {showOrderHistory && (
+        <div className="fixed inset-0 z-[61] overflow-y-auto">
+          <div className="min-h-screen px-4 flex items-center justify-center py-10">
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={() => setShowOrderHistory(false)} />
+            <div className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-3xl font-heading text-white">Meus Pedidos</h3>
+                  <button onClick={() => setShowOrderHistory(false)} className="p-2 text-zinc-500 hover:text-white bg-zinc-900 rounded-full transition-colors"><X size={24} /></button>
+                </div>
+
+                {customerOrders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-zinc-400 text-lg">Você ainda não possui pedidos.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                    {customerOrders.map((order: any) => (
+                      <div key={order.id} className="p-4 bg-zinc-900 rounded-xl border border-zinc-800">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="text-white font-bold">Pedido #{order.id?.substring(0, 6)}</p>
+                            <p className="text-zinc-400 text-sm">{new Date(order.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            order.status === 'DELIVERED' ? 'bg-green-900/30 text-green-400' :
+                            order.status === 'CANCELLED' ? 'bg-red-900/30 text-red-400' :
+                            order.status === 'READY' ? 'bg-blue-900/30 text-blue-400' :
+                            'bg-yellow-900/30 text-yellow-400'
+                          }`}>
+                            {order.status === 'PENDING' ? 'Pendente' :
+                             order.status === 'CONFIRMED' ? 'Confirmado' :
+                             order.status === 'PREPARING' ? 'Preparando' :
+                             order.status === 'READY' ? 'Pronto' :
+                             order.status === 'DELIVERED' ? 'Entregue' :
+                             order.status === 'CANCELLED' ? 'Cancelado' : order.status}
+                          </span>
+                        </div>
+                        <div className="text-sm text-zinc-300 space-y-1 mb-3">
+                          {order.items?.map((item: any, idx: number) => (
+                            <p key={idx}>• {item.quantity}x {item.name} - R$ {(item.price * item.quantity).toFixed(2)}</p>
+                          ))}
+                        </div>
+                        <div className="flex justify-between text-white font-bold border-t border-zinc-700 pt-3">
+                          <span>Total:</span>
+                          <span className="text-orange-500">R$ {order.total?.toFixed(2) || '0.00'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

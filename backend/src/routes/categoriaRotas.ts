@@ -7,12 +7,14 @@ const categoriaRotas = Router();
 const categoriaController = new CategoriaController();
 
 // Public
+categoriaRotas.get('/public', categoriaController.listAllPublic); // Nova rota pública
 categoriaRotas.get('/:tenantSlug/public', tenantMiddleware, categoriaController.listPublic);
 
 // Protected
 categoriaRotas.use(autenticacaoMiddleware);
-categoriaRotas.post('/', categoriaController.create);
+categoriaRotas.use(tenantMiddleware);
 categoriaRotas.get('/', categoriaController.list);
+categoriaRotas.post('/', categoriaController.create);
 categoriaRotas.put('/:id', categoriaController.update);
 categoriaRotas.delete('/:id', categoriaController.delete);
 

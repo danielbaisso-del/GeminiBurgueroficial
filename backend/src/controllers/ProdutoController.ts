@@ -19,29 +19,42 @@ const createProductSchema = z.object({
 
 export class ProdutoController {
   async create(req: Request, res: Response) {
-    const data = createProductSchema.parse(req.body);
-    const tenantId = req.user!.tenantId;
+    try {
+      console.log('📦 Criando produto com dados:', req.body);
+      console.log('👤 User:', req.user);
+      
+      const data = createProductSchema.parse(req.body);
+      const tenantId = req.user!.tenantId;
 
-    const slug = data.name
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+      if (!tenantId) {
+        throw new ErroApp('User tenant not found', 400);
+      }
 
-    const product = await prisma.product.create({
-      data: {
-        ...data,
-        slug,
-        tenantId,
-      },
-      include: {
-        category: true,
-      },
-    });
+      const slug = data.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
 
-    return res.status(201).json(product);
+      const product = await prisma.product.create({
+        data: {
+          ...data,
+          slug,
+          tenantId,
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      console.log('✅ Produto criado:', product.id);
+      return res.status(201).json(product);
+    } catch (error) {
+      console.error('❌ Erro ao criar produto:', error);
+      throw error;
+    }
   }
 
   async list(req: Request, res: Response) {
@@ -79,6 +92,32 @@ export class ProdutoController {
       orderBy: {
         createdAt: 'desc',
       },
+    });
+
+    return res.json(products);
+  }
+
+  async listAllPublic(req: Request, res: Response) {
+    // Listar todos os produtos públicos de todos os tenants
+    // Usado pelo app mobile para listar produtos da plataforma
+    const products = await prisma.product.findMany({
+      where: {
+        available: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        categoryId: true,
+        image: true,
+        stock: true,
+        available: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 100, // Limitar para performance
     });
 
     return res.json(products);
