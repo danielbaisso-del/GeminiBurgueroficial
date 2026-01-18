@@ -371,7 +371,6 @@ Aguardando confirmação!`.trim();
       setIsSavingOrder(false);
     }
   };
-  };
 
   const categories = [
     { id: 'all', label: 'Todos', icon: null },
