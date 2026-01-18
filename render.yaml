@@ -1,0 +1,41 @@
+# Render service descriptor for Gemini Burger
+# Import this file in Render (Dashboard → New → Import from YAML) or use render CLI.
+# NOTE: This project uses MySQL via Prisma; Render doesn't provide managed MySQL.
+# Please provision a PlanetScale (MySQL) database or other MySQL host and add its
+# connection string to Render as a secret named DATABASE_URL. Add MERCADOPAGO_ACCESS_TOKEN
+# as a secret as well.
+
+services:
+  - type: web_service
+    name: gemini-burger-backend
+    env: docker
+    plan: free
+    branch: main
+    dockerfile_path: backend/Dockerfile
+    build_command: ""
+    start_command: ""
+    env:
+      - key: PORT
+        value: "3333"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: "" # set this as a secret in Render dashboard (DATABASE_URL)
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        value: "" # set this as a secret in Render dashboard
+
+static_sites:
+  - name: gemini-burger-frontend
+    branch: main
+    root_dir: frontend
+    build_command: "npm ci && npm run build"
+    publish_path: dist
+    plan: free
+    env: []
+
+# After importing this YAML:
+# 1) In Render dashboard, open the backend service and add secrets:
+#    - DATABASE_URL (e.g. mysql://user:pass@host/dbname)
+#    - MERCADOPAGO_ACCESS_TOKEN
+# 2) Trigger a deploy (Render will build the backend using the provided Dockerfile
+#    and build the frontend using the defined build_command).

@@ -14,7 +14,7 @@ interface MPCreatePaymentBody {
   };
 }
 
-export async function createPixPayment({ amount, description, external_reference }: { amount: number; description?: string; external_reference?: string }) {
+export async function createPixPayment({ amount, description, external_reference }: { amount: number; description?: string; external_reference?: string }, idempotencyKey?: string) {
   const token = getToken();
   if (!token) throw new Error('mercadopago_token_missing');
 
@@ -28,12 +28,17 @@ export async function createPixPayment({ amount, description, external_reference
     },
   };
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+  if (idempotencyKey) {
+    headers['x-idempotency-key'] = idempotencyKey;
+  }
+
   const res = await fetch(`${MP_BASE}/v1/payments`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 

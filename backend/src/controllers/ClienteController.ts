@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getQueryString } from '../lib/query';
 
 export class ClienteController {
   async list(req: Request, res: Response) {
@@ -21,7 +22,8 @@ export class ClienteController {
   }
 
   async getById(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
+    if (!id) return res.status(400).json({ error: 'id required' });
     const tenantId = req.user!.tenantId;
 
     const customer = await prisma.customer.findFirst({
@@ -44,7 +46,8 @@ export class ClienteController {
   }
 
   async getOrders(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
+    if (!id) return res.status(400).json({ error: 'id required' });
     const tenantId = req.user!.tenantId;
 
     const orders = await prisma.order.findMany({

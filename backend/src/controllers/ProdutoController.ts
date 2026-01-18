@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { ErroApp } from '../middlewares/tratadorErros';
+import { getQueryString } from '../lib/query';
 
 const createProductSchema = z.object({
   name: z.string(),
@@ -46,7 +47,8 @@ export class ProdutoController {
 
   async list(req: Request, res: Response) {
     const tenantId = req.user!.tenantId;
-    const { categoryId, available } = req.query;
+    const categoryId = getQueryString(req.query.categoryId);
+    const available = getQueryString(req.query.available);
 
     const products = await prisma.product.findMany({
       where: {
@@ -85,7 +87,8 @@ export class ProdutoController {
   }
 
   async getById(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
+    if (!id) throw new ErroApp('Product not found', 404);
     const tenantId = req.user!.tenantId;
 
     const product = await prisma.product.findFirst({
@@ -106,7 +109,8 @@ export class ProdutoController {
   }
 
   async getBySlug(req: Request, res: Response) {
-    const { slug } = req.params;
+    const slug = getQueryString((req.params as any).slug);
+    if (!slug) throw new ErroApp('Product not found', 404);
     const tenant = req.tenant!;
 
     const product = await prisma.product.findFirst({
@@ -127,7 +131,7 @@ export class ProdutoController {
   }
 
   async update(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
     const data = createProductSchema.partial().parse(req.body);
     const tenantId = req.user!.tenantId;
 
@@ -151,7 +155,7 @@ export class ProdutoController {
   }
 
   async delete(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
     const tenantId = req.user!.tenantId;
 
     const product = await prisma.product.findFirst({

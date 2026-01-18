@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { ErroApp } from '../middlewares/tratadorErros';
+import { getQueryString } from '../lib/query';
 
 const createOrderSchema = z.object({
   customerName: z.string(),
@@ -134,7 +135,9 @@ export class PedidoController {
 
   async list(req: Request, res: Response) {
     const tenantId = (req as any).tenant?.id || (req as any).user?.tenantId;
-    const { status, startDate, endDate } = req.query;
+    const status = getQueryString(req.query.status);
+    const startDate = getQueryString(req.query.startDate);
+    const endDate = getQueryString(req.query.endDate);
 
     const where: any = { tenantId };
     if (status) where.status = status as any;
@@ -162,7 +165,8 @@ export class PedidoController {
   }
 
   async getById(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
+    if (!id) throw new ErroApp('Order not found', 404);
     const tenantId = (req as any).tenant?.id || (req as any).user?.tenantId;
 
     const order = await prisma.order.findFirst({
@@ -188,7 +192,8 @@ export class PedidoController {
   }
 
   async updateStatus(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
+    if (!id) throw new ErroApp('Order not found', 404);
     const { status } = z.object({
       status: z.enum(['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED']),
     }).parse(req.body);
@@ -224,7 +229,8 @@ export class PedidoController {
   }
 
   async cancel(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
+    if (!id) throw new ErroApp('Order not found', 404);
     const tenantId = (req as any).tenant?.id || (req as any).user?.tenantId;
 
     const order = await prisma.order.findFirst({

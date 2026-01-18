@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { ErroApp } from '../middlewares/tratadorErros';
+import { getQueryString } from '../lib/query';
 
 const createCategorySchema = z.object({
   name: z.string(),
@@ -64,7 +65,7 @@ export class CategoriaController {
   }
 
   async update(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
     const data = createCategorySchema.partial().parse(req.body);
     const tenantId = req.user!.tenantId;
 
@@ -85,7 +86,7 @@ export class CategoriaController {
   }
 
   async delete(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = getQueryString((req.params as any).id);
     const tenantId = req.user!.tenantId;
 
     const category = await prisma.category.findFirst({

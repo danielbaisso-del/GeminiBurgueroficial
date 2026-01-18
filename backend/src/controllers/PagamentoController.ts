@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { createPixPayment, getPayment } from '../services/mercadoPagoService';
 import { prisma } from '../lib/prisma';
+import { getQueryString } from '../lib/query';
 import QRCode from 'qrcode';
 
 type MPResponse = {
@@ -40,7 +41,8 @@ export async function criarPix(req: Request, res: Response) {
       return res.json({ provider: 'mock', pixPayload, qrCodeData, qrCodePng, qrCodeBase64 });
     }
 
-    const mpResp = await createPixPayment({ amount: Number(amount), description, external_reference: orderId }) as MPResponse;
+    const idempotencyKey = (req.headers['x-idempotency-key'] || req.headers['x-idempotency']) as string | undefined;
+    const mpResp = await createPixPayment({ amount: Number(amount), description, external_reference: orderId }, idempotencyKey) as MPResponse;
 
     const qrCode = mpResp.point_of_interaction?.transaction_data?.qr_code || mpResp.qr_code || null;
 
@@ -85,7 +87,7 @@ export async function criarPix(req: Request, res: Response) {
 
 export async function mercadopagoWebhook(req: Request, res: Response) {
   try {
-    const id = req.body?.data?.id || req.query?.id || req.body?.id;
+    const id = req.body?.data?.id || getQueryString(req.query.id) || req.body?.id;
     if (!id) return res.status(400).send('missing id');
 
     const payment = await getPayment(String(id)) as MPResponse;

@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getQueryString } from '../lib/query';
 
 export class TenantController {
   async getPublicConfig(req: Request, res: Response) {
-    const { slug } = req.params;
+    const slug = getQueryString((req.params as any).slug);
+    if (!slug) return res.status(400).json({ error: 'slug required' });
 
     const tenant = await prisma.tenant.findUnique({
       where: { slug },

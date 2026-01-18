@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getQueryString } from '../lib/query';
 
 export class AnaliticasController {
   async getDashboard(req: Request, res: Response) {
@@ -48,7 +49,8 @@ export class AnaliticasController {
 
   async getByPeriod(req: Request, res: Response) {
     const tenantId = req.user!.tenantId;
-    const { startDate, endDate } = req.query;
+    const startDate = getQueryString(req.query.startDate);
+    const endDate = getQueryString(req.query.endDate);
 
     const orders = await prisma.order.findMany({
       where: {
@@ -118,7 +120,9 @@ export class AnaliticasController {
 
   async getDetailedReport(req: Request, res: Response) {
     const tenantId = req.user!.tenantId;
-    const { period, startDate, endDate } = req.query;
+    const period = getQueryString(req.query.period);
+    const startDate = getQueryString(req.query.startDate);
+    const endDate = getQueryString(req.query.endDate);
 
     let dateFilter: Record<string, unknown> = {};
     const now = new Date();

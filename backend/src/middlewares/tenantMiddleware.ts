@@ -13,8 +13,9 @@ export async function tenantMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const tenantSlug = req.headers['x-tenant-slug'] as string || 
-                     req.params.tenantSlug ||
+  const headerSlug = req.headers['x-tenant-slug'];
+  const tenantSlug = (Array.isArray(headerSlug) ? headerSlug[0] : headerSlug) as string | undefined ||
+                     (req.params as any).tenantSlug ||
                      extractSlugFromHost(req.hostname);
 
   if (!tenantSlug) {
@@ -48,8 +49,4 @@ function extractSlugFromHost(hostname: string): string {
   return '';
 }
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    tenant?: Tenant;
-  }
-}
+// `Request.tenant` is declared in `src/types/express.d.ts`

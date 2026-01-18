@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
 import { criarPix, mercadopagoWebhook, renderPix } from '../controllers/PagamentoController';
+import { getQueryString } from '../lib/query';
 import { prisma } from '../lib/prisma';
 import { ErroApp } from '../middlewares/tratadorErros';
 
@@ -32,7 +33,7 @@ router.post('/dev/confirm/:orderId', async (req, res) => {
 		return res.status(404).send('Not found');
 	}
 
-	const { orderId } = req.params;
+	const orderId = getQueryString((req.params as any).orderId);
 	if (!orderId) return res.status(400).json({ error: 'orderId required' });
 
 	try {
