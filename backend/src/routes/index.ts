@@ -20,5 +20,6 @@ routes.use('/customers', clienteRotas);
 routes.use('/analytics', analiticasRotas);
 routes.use('/payments', pagamentoRotas);
 routes.use('/config', configuracaoRotas);
+// removed debug/test routes; use /api/health/db in server for safe DB check
 
 export { routes };

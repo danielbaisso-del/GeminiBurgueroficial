@@ -14,6 +14,7 @@ import { analiticasRotas } from './routes/analiticasRotas';
 import configuracaoRotas from './routes/configuracaoRotas';
 import { tenantRotas } from './routes/tenantRotas';
 import { pagamentoRotas } from './routes/pagamentoRotas';
+import { prisma } from './lib/prisma';
 import { tratadorErros } from './middlewares/tratadorErros';
 import { generalLimiter } from './middlewares/rateLimiter';
 
@@ -65,6 +66,15 @@ app.use('/api/analytics', analiticasRotas);
 app.use('/api/config', configuracaoRotas);
 app.use('/api/tenants', tenantRotas);
 app.use('/api/payments', pagamentoRotas);
+// Database health check (safe for production)
+app.get('/api/health/db', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return res.json({ db: 'ok' });
+  } catch (error) {
+    return res.status(503).json({ db: 'error' });
+  }
+});
 
 // Health check
 app.get('/health', (req, res) => {
