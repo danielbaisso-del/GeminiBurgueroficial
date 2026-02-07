@@ -827,7 +827,8 @@ Aguardando confirmação!`.trim();
                 value={tempNotes}
                 onChange={(e) => setTempNotes(e.target.value)}
                 placeholder="Ex: Sem cebola, ponto da carne bem passado..."
-                className="w-full bg-zinc-800 border-2 border-zinc-700 focus:border-blue-500 rounded-2xl px-6 py-4 text-orange-500 placeholder-zinc-500 outline-none transition-all h-32 resize-none text-base"
+                className="w-full bg-zinc-800 border-2 border-orange-500 focus:border-orange-600 rounded-2xl px-6 py-4 placeholder-zinc-500 outline-none transition-all h-32 resize-none text-base font-semibold"
+                style={{ color: '#f97316 !important' }}
                 maxLength={200}
               />
               <p className="text-zinc-500 text-xs mt-2 text-right">{tempNotes.length}/200 caracteres</p>
